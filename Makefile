@@ -141,9 +141,6 @@ wasm: dist/zlib_streams.wasm
 .PHONY: wasm_traced
 wasm_traced: dist/zlib_streams_traced.wasm
 
-.PHONY: wasm_traced_nobridge
-wasm_traced_nobridge: dist/zlib_streams_traced_nobridge.wasm
-
 dist/zlib_streams_traced.wasm: $(WASM_SRCS)
 	@echo "Building traced $@ using $(EMCC)"
 	@mkdir -p dist
