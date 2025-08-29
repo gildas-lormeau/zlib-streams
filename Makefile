@@ -279,16 +279,7 @@ run_all_tests: dist/zlib_streams.wasm
 	@$(MAKE) run_transform_roundtrip
 	@$(MAKE) test_decompressionstream_inflate9
 	@echo "Completed run_all_tests"
-dist/zlib_streams_traced_nobridge.wasm:
-	@echo "Building traced (no bridge) $@ using $(EMCC)"
-	@mkdir -p dist
-	$(EMCC) src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/inflate9.c \
-		src/zlib/contrib/infback9/inftree9.c src/zlib/inffast.c src/zlib/inflate.c src/zlib/inftrees.c src/zlib/zutil.c \
-		src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c \
-		$(WASM_CFLAGS) $(DEBUG_DEFINES_TRACED) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
-			-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_wasm_inflate_new","_wasm_inflate_init","_wasm_inflate_init_raw","_wasm_inflate_process","_wasm_inflate_end","_wasm_inflate_last_consumed","_wasm_deflate_new","_wasm_deflate_init","_wasm_deflate_init_raw","_wasm_deflate_process","_wasm_deflate_end","_wasm_deflate_last_consumed"]' \
-		-s EXPORTED_RUNTIME_METHODS='["cwrap","getValue","setValue","allocate","allocateUTF8"]' \
-		-o $@
+
 dist/zlib_streams.wasm: $(WASM_SRCS)
 	@echo "Building $@ using $(EMCC)"
 	@mkdir -p dist
