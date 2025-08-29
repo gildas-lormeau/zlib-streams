@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "zlib.h"
 #include "inflate9.h"
 /* Choose DEFLATE64_WBITS for Deflate64 window size selection. This separates
  * the wrapper's decision from the zlib build's MAX_WBITS constant so tests
