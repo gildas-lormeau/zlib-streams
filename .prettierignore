@@ -1,0 +1,5 @@
+# Ignore C and C++ source and headers in this repo
+**/*.c
+**/*.h
+**/*.cpp
+**/*.hpp

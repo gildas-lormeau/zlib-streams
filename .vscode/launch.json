@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug payload_decompress_test (debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/payload_decompress_test_debug",
+            "args": ["${workspaceFolder}/test/ref-data/deflate64-payload", "${workspaceFolder}/tmp/out_test.bin"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build payload_decompress_test_debug",
+            "internalConsoleOptions": "openOnSessionStart",
+            "stopOnEntry": false
+        }
+    ]
+}

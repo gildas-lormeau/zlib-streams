@@ -1,0 +1,29 @@
+{
+    "files.associations": {
+        "future": "cpp",
+        "regex": "cpp",
+        "__locale": "cpp",
+        "ios": "cpp",
+        "valarray": "cpp",
+        "*.inc": "cpp",
+        "inflate.h": "c",
+        "inftree9.h": "c",
+        "string": "c",
+        "string_view": "c",
+        "queue": "cpp",
+        "stack": "cpp"
+    },
+    "[c]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[cpp]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    }
+    ,
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.codeFormatting.clangFormat.sortIncludes": false,
+    "clang-format.sortIncludes": false,
+    "cmake.sourceDirectory": "/Users/gildas/Desktop/Dev/inflate64/emsdk/upstream/emscripten/test/cmake/stdproperty"
+}
