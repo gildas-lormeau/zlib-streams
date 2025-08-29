@@ -26,7 +26,7 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/compression-streams.js');
-  const { CompressionStream, DecompressionStream } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   console.log('format=%s size=%d wasm=%s', format, size, wasmPath);
 
@@ -36,8 +36,8 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   const pump = new TransformStream();
   const writer = pump.writable.getWriter();
 
-  const cs = new CompressionStream(format, { wasm: exp });
-  const ds = new DecompressionStream(format, { wasm: exp });
+  const cs = new CompressionStreamZlib(format, { wasm: exp });
+  const ds = new DecompressionStreamZlib(format, { wasm: exp });
   const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
   const reader = outStream.getReader();
 

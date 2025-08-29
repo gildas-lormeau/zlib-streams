@@ -12,11 +12,10 @@ const crypto = require('crypto');
     const wasmBuf = fs.readFileSync(wasmPath);
     const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: () => { } } });
     const exp = instance.exports;
-    // make available to the module if it expects globalThis.WASM_EXPORTS
-    globalThis.WASM_EXPORTS = exp;
-
+    
     const mod = await import('../api/compression-streams.js');
-    const { CompressionStream, DecompressionStream } = mod;
+    const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
+    setWasmExports(exp);
 
     // prepare random test data
     const LEN = 24000;
@@ -28,8 +27,8 @@ const crypto = require('crypto');
     const writer = pump.writable.getWriter();
 
     // create pipeline
-    const cs = new CompressionStream('deflate', { wasm: exp });
-    const ds = new DecompressionStream('deflate', { wasm: exp });
+    const cs = new CompressionStreamZlib('deflate', { wasm: exp });
+    const ds = new DecompressionStreamZlib('deflate', { wasm: exp });
     const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
     const reader = outStream.getReader();
 

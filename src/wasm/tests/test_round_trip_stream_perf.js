@@ -17,7 +17,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/compression-streams.js');
-  const { CompressionStream, DecompressionStream } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   // Parse optional CLI flags:
   // --packets=65536,32768 (bytes)
@@ -72,7 +72,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
           // --- compress-only ---
           const pumpC = new TransformStream();
           const writerC = pumpC.writable.getWriter();
-          const cs = new CompressionStream('deflate-raw', streamOpts);
+          const cs = new CompressionStreamZlib('deflate-raw', streamOpts);
           const compStream = pumpC.readable.pipeThrough(cs);
           const compReader = compStream.getReader();
 
@@ -102,7 +102,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
           // --- decompress-only ---
           const pumpD = new TransformStream();
           const writerD = pumpD.writable.getWriter();
-          const ds = new DecompressionStream('deflate-raw', streamOpts);
+          const ds = new DecompressionStreamZlib('deflate-raw', streamOpts);
           const decompStream = pumpD.readable.pipeThrough(ds);
           const decompReader = decompStream.getReader();
 
@@ -142,8 +142,8 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
           // --- combined roundtrip (write src -> cs -> ds -> read) ---
           const pumpR = new TransformStream();
           const writerR = pumpR.writable.getWriter();
-          const csR = new CompressionStream('deflate-raw', streamOpts);
-          const dsR = new DecompressionStream('deflate-raw', streamOpts);
+          const csR = new CompressionStreamZlib('deflate-raw', streamOpts);
+          const dsR = new DecompressionStreamZlib('deflate-raw', streamOpts);
           const outStream = pumpR.readable.pipeThrough(csR).pipeThrough(dsR);
           const readerR = outStream.getReader();
 

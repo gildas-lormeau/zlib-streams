@@ -145,7 +145,7 @@ dist/zlib_streams_traced.wasm: $(WASM_SRCS)
 	@echo "Building traced $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) $(DEBUG_DEFINES_TRACED) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
-	-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_wasm_inflate_new","_wasm_inflate_init","_wasm_inflate_init_raw","_wasm_inflate_init_gzip","_wasm_inflate_process","_wasm_inflate_end","_wasm_inflate_last_consumed","_wasm_deflate_new","_wasm_deflate_init","_wasm_deflate_init_raw","_wasm_deflate_init_level","_wasm_deflate_init_raw_level","_wasm_deflate_init_gzip","_wasm_deflate_init_gzip_level","_wasm_deflate_process","_wasm_deflate_end","_wasm_deflate_last_consumed","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_level","_deflate_init_raw_level","_deflate_init_gzip","_deflate_init_gzip_level","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
 
 	# Run reference C and WASM test suites over payloads in test/ref-data
@@ -253,7 +253,7 @@ run_inflate9_roundtrip_all: dist/zlib_streams.wasm
 
 .PHONY: test_decompressionstream_inflate9
 test_decompressionstream_inflate9: dist/zlib_streams.wasm
-	@echo "Testing DecompressionStream against native inflate9 for deflate64 payloads"
+	@echo "Testing DecompressionStreamZlib against native inflate9 for deflate64 payloads"
 	@node src/wasm/tests/test_decompressionstream_inflate9.js dist/zlib_streams.wasm
 
 
@@ -280,7 +280,7 @@ dist/zlib_streams.wasm: $(WASM_SRCS)
 	@echo "Building $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
-		-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_wasm_inflate_new","_wasm_inflate_init","_wasm_inflate_init_raw","_wasm_inflate_init_gzip","_wasm_inflate_process","_wasm_inflate_end","_wasm_inflate_last_consumed","_wasm_deflate_new","_wasm_deflate_init","_wasm_deflate_init_raw","_wasm_deflate_init_level","_wasm_deflate_init_raw_level","_wasm_deflate_init_gzip","_wasm_deflate_init_gzip_level","_wasm_deflate_process","_wasm_deflate_end","_wasm_deflate_last_consumed"]' \
+		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_level","_deflate_init_raw_level","_deflate_init_gzip","_deflate_init_gzip_level","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
 
 # Production-optimized wasm: smaller build with -Oz and no extra runtime methods.
@@ -292,7 +292,7 @@ dist/zlib_streams_prod.wasm: $(WASM_SRCS)
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -Oz -flto -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
 		-s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=1 \
-		-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_wasm_inflate_new","_wasm_inflate_init","_wasm_inflate_init_raw","_wasm_inflate_init_gzip","_wasm_inflate_process","_wasm_inflate_end","_wasm_inflate_last_consumed","_wasm_deflate_new","_wasm_deflate_init","_wasm_deflate_init_raw","_wasm_deflate_init_level","_wasm_deflate_init_raw_level","_wasm_deflate_init_gzip","_wasm_deflate_init_gzip_level","_wasm_deflate_process","_wasm_deflate_end","_wasm_deflate_last_consumed","_malloc","_free"]' \
+		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_level","_deflate_init_raw_level","_deflate_init_gzip","_deflate_init_gzip_level","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
 	@which wasm-opt >/dev/null 2>&1 && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; wasm-opt -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
 

@@ -24,7 +24,7 @@ if (files.length === 0) {
   // prefer an explicit module-level setter so callers don't need to pass the wasm object
   const mod = await import('../api/compression-streams.js');
   if (typeof mod.setWasmExports === 'function') mod.setWasmExports(exp); else globalThis.WASM_EXPORTS = exp;
-  const { DecompressionStream } = mod;
+  const { DecompressionStreamZlib } = mod;
 
   let overallFail = false;
 
@@ -46,11 +46,11 @@ if (files.length === 0) {
       }
     } catch (e) { console.error('failed to run reference runner', e); overallFail = true; continue; }
 
-    // Run DecompressionStream pipeline
+    // Run DecompressionStreamZlib pipeline
     const pump = new TransformStream();
     const writer = pump.writable.getWriter();
-  // DecompressionStream will read wasm exports from globalThis.WASM_EXPORTS
-  const ds = new DecompressionStream('deflate64-raw');
+  // DecompressionStreamZlib will read wasm exports from globalThis.WASM_EXPORTS
+  const ds = new DecompressionStreamZlib('deflate64-raw');
     const outStream = pump.readable.pipeThrough(ds);
     const reader = outStream.getReader();
 
@@ -85,7 +85,7 @@ if (files.length === 0) {
       overallFail = true; continue;
     }
 
-    // write the DecompressionStream output for inspection
+    // write the DecompressionStreamZlib output for inspection
     const ourOutPath = path.join(outDir, 'decompstream_inflate9__' + f + '.out');
     fs.writeFileSync(ourOutPath, outBuf);
     console.log('PASS', f, 'wrote', ourOutPath, 'size=', outBuf.length);

@@ -15,7 +15,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/compression-streams.js');
-  const { CompressionStream, DecompressionStream } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   const LEN = 24000;
   const srcBuf = Buffer.allocUnsafe(LEN);
@@ -24,8 +24,8 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   const pump = new TransformStream();
   const writer = pump.writable.getWriter();
 
-  const cs = new CompressionStream('deflate', { wasm: exp });
-  const ds = new DecompressionStream('deflate', { wasm: exp });
+  const cs = new CompressionStreamZlib('deflate', { wasm: exp });
+  const ds = new DecompressionStreamZlib('deflate', { wasm: exp });
   const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
   const reader = outStream.getReader();
 

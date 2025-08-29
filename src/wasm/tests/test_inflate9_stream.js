@@ -21,10 +21,10 @@ const wasmBuf = fs.readFileSync(wasmPath);
   const memory = exp.memory;
   const HEAP = new Uint8Array(memory.buffer);
 
-  const zptr = exp.wasm_inflate9_new();
+  const zptr = exp.inflate9_new();
   if (zptr === 0) throw new Error('alloc failed');
   // payloads are raw deflate64 (no zlib/gzip header)
-  let r = exp.wasm_inflate9_init_raw(zptr);
+  let r = exp.inflate9_init(zptr);
   if (r !== 0) throw new Error('init failed: '+r);
 
   // allocate buffers in wasm heap (avoid overwriting static data at low addresses)
@@ -42,7 +42,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
   // use Z_FINISH in the main loop when we've supplied the last input
   // to mirror the native harness and avoid duplicate final calls.
   const flush = (availIn === 0) ? 4 : 0; /* Z_FINISH when no more input, else Z_NO_FLUSH */
-  const ret = exp.wasm_inflate9_process(zptr, inPtr+off, toRead, outPtr + outPos, OUT_WINDOW - outPos, flush);
+  const ret = exp.inflate9_process(zptr, inPtr+off, toRead, outPtr + outPos, OUT_WINDOW - outPos, flush);
   // decode packed return: low 24 bits = produced, high 8 bits = zlib code
   const produced = ret & 0x00ffffff;
   let code = (ret >> 24) & 0xff;
@@ -55,7 +55,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
    * wasm inflate9 implementation. This prevents truncating the compressed
    * stream when inflate9 does not consume the whole supplied chunk.
    */
-  const consumed = exp.wasm_inflate9_last_consumed(zptr);
+  const consumed = exp.inflate9_last_consumed(zptr);
   off += consumed;
   availIn -= consumed;
       if (produced === (OUT_WINDOW - outPos)) {
@@ -67,6 +67,6 @@ const wasmBuf = fs.readFileSync(wasmPath);
   }
   // No separate finalize loop: the main loop used Z_FINISH when no input
   // remained and continues until the stream reports Z_STREAM_END.
-  exp.wasm_inflate9_end(zptr);
+  exp.inflate9_end(zptr);
   console.log('done');
 })();

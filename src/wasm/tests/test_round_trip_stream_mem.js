@@ -19,9 +19,9 @@ const wasmBuf = fs.readFileSync(wasmPath);
   const HEAP = new Uint8Array(memory.buffer);
 
   // deflate setup
-  const dptr = exp.wasm_deflate_new();
+  const dptr = exp.deflate_new();
   if (dptr === 0) throw new Error('deflate alloc failed');
-  let r = exp.wasm_deflate_init(dptr);
+  let r = exp.deflate_init(dptr);
   if (r !== 0) throw new Error('deflate init failed: '+r);
 
   const inPtr = exp.malloc(buf.length);
@@ -35,9 +35,9 @@ const wasmBuf = fs.readFileSync(wasmPath);
   // inflate setup (we stream into it)
   const iptrOut = exp.malloc(OUT_WINDOW);
   if (!iptrOut) throw new Error('malloc failed for inflate output');
-  const zptr = exp.wasm_inflate_new();
+  const zptr = exp.inflate_new();
   if (zptr === 0) throw new Error('inflate alloc failed');
-  r = exp.wasm_inflate_init(zptr);
+  r = exp.inflate_init(zptr);
   if (r !== 0) throw new Error('inflate init failed: '+r);
 
   const compHeapPtr = exp.malloc(OUT_WINDOW);
@@ -57,7 +57,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
     if (!deflate_done) {
       const toRead = Math.min(availIn, 32768);
       const flush = (availIn === 0) ? 4 : 0;
-      const ret = exp.wasm_deflate_process(dptr, inPtr + off, toRead, outPtr + compOutPos, OUT_WINDOW - compOutPos, flush);
+      const ret = exp.deflate_process(dptr, inPtr + off, toRead, outPtr + compOutPos, OUT_WINDOW - compOutPos, flush);
       const produced = ret & 0x00ffffff;
       let code = (ret >> 24) & 0xff;
       if (code & 0x80) code = code - 0x100;
@@ -71,14 +71,14 @@ const wasmBuf = fs.readFileSync(wasmPath);
         while (compAvail > 0 && !inflate_done) {
           const infToRead = compAvail;
           const infFlush = (code === 1 && compAvail === infToRead && availIn === 0) ? 4 : 0;
-          const r2 = exp.wasm_inflate_process(zptr, compHeapPtr + compOff, infToRead, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, infFlush);
+          const r2 = exp.inflate_process(zptr, compHeapPtr + compOff, infToRead, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, infFlush);
           if (r2 < 0) throw new Error('inflate process error: '+r2);
           const produced2 = r2 & 0x00ffffff;
           const code2 = (r2 >> 24) & 0xff;
           if (produced2 > 0) {
             decompChunks.push(Buffer.from(HEAP.subarray(iptrOut + decompOutPos, iptrOut + decompOutPos + produced2)));
           }
-          const consumed2 = exp.wasm_inflate_last_consumed(zptr);
+          const consumed2 = exp.inflate_last_consumed(zptr);
           compOff += consumed2;
           compAvail -= consumed2;
           if (produced2 === (OUT_WINDOW - decompOutPos)) {
@@ -94,7 +94,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
         }
       }
 
-      const consumed = exp.wasm_deflate_last_consumed(dptr);
+      const consumed = exp.deflate_last_consumed(dptr);
       off += consumed;
       availIn -= consumed;
 
@@ -108,12 +108,12 @@ const wasmBuf = fs.readFileSync(wasmPath);
     }
 
     if (deflate_done && !inflate_done) {
-      const r2 = exp.wasm_inflate_process(zptr, compHeapPtr, 0, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, 4);
+      const r2 = exp.inflate_process(zptr, compHeapPtr, 0, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, 4);
       if (r2 < 0) throw new Error('inflate process error while draining: '+r2);
       const produced2 = r2 & 0x00ffffff;
       const code2 = (r2 >> 24) & 0xff;
       if (produced2 > 0) decompChunks.push(Buffer.from(HEAP.subarray(iptrOut + decompOutPos, iptrOut + decompOutPos + produced2)));
-      const consumed2 = exp.wasm_inflate_last_consumed(zptr);
+      const consumed2 = exp.inflate_last_consumed(zptr);
       if (produced2 === (OUT_WINDOW - decompOutPos)) {
         decompOutPos = 0;
       } else {
@@ -124,8 +124,8 @@ const wasmBuf = fs.readFileSync(wasmPath);
     }
   }
 
-  exp.wasm_deflate_end(dptr);
-  exp.wasm_inflate_end(zptr);
+  exp.deflate_end(dptr);
+  exp.inflate_end(zptr);
 
   const decompBuf = Buffer.concat(decompChunks);
   if (Buffer.compare(buf, decompBuf) === 0) {

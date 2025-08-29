@@ -3,10 +3,6 @@
 #include <stdint.h>
 #include "zlib.h"
 
-/* Choose RAW_WBITS for raw deflate window selection. If zlib exposes
- * MAX_WBITS use it; otherwise default to 15 (32KiB) for standard zlib.
- * This keeps callers/tests independent of the zlib build-time constant.
- */
 #ifndef RAW_WBITS
 #if defined(MAX_WBITS)
 #define RAW_WBITS MAX_WBITS
@@ -22,7 +18,7 @@ struct wasm_inflate_ctx {
   unsigned last_consumed;
 };
 
-unsigned wasm_inflate_new(void) {
+unsigned inflate_new(void) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)malloc(sizeof(*c));
   if (!c)
     return 0;
@@ -35,17 +31,21 @@ unsigned wasm_inflate_new(void) {
   return (unsigned)(uintptr_t)c;
 }
 
-int wasm_inflate_init(unsigned zptr) {
+int inflate_init(unsigned zptr) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
   return inflateInit(&c->strm);
 }
 
-/* Initialize for gzip (and zlib) header auto-detection. Use windowBits of
- * MAX_WBITS + 16 so zlib accepts gzip headers as well as zlib headers.
- */
-int wasm_inflate_init_gzip(unsigned zptr) {
+int inflate_init_raw(unsigned zptr) {
+  struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
+  if (!c)
+    return Z_STREAM_ERROR;
+  return inflateInit2(&c->strm, -RAW_WBITS);
+}
+
+int inflate_init_gzip(unsigned zptr) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
@@ -56,17 +56,8 @@ int wasm_inflate_init_gzip(unsigned zptr) {
 #endif
 }
 
-/* Initialize for raw deflate (no zlib/gzip header). Use -MAX_WBITS to
- * indicate raw deflate to zlib. */
-int wasm_inflate_init_raw(unsigned zptr) {
-  struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
-  if (!c)
-    return Z_STREAM_ERROR;
-  return inflateInit2(&c->strm, -RAW_WBITS);
-}
-
-int wasm_inflate_process(unsigned zptr, unsigned in_ptr, unsigned in_len,
-                         unsigned out_ptr, unsigned out_len, int flush) {
+int inflate_process(unsigned zptr, unsigned in_ptr, unsigned in_len,
+                    unsigned out_ptr, unsigned out_len, int flush) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
@@ -85,19 +76,12 @@ int wasm_inflate_process(unsigned zptr, unsigned in_ptr, unsigned in_len,
 
   int ret = inflate(&c->strm, flush);
   int produced = (int)(out_len - c->strm.avail_out);
-  /* Record how many input bytes were consumed so the host can advance its
-   * input pointer precisely.
-   */
   c->last_consumed = (unsigned)(in_len - c->strm.avail_in);
-  /* Encode produced bytes and zlib return code in a 32-bit value so the
-   * JS harness can detect both output and error codes without losing
-   * the produced byte count when zlib returns a negative error code.
-   */
   int code = ret & 0xff;
   return (produced & 0x00ffffff) | ((code & 0xff) << 24);
 }
 
-int wasm_inflate_end(unsigned zptr) {
+int inflate_end(unsigned zptr) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
@@ -107,8 +91,7 @@ int wasm_inflate_end(unsigned zptr) {
   return r;
 }
 
-/* Diagnostics: small accessors for JS */
-unsigned wasm_inflate_last_consumed(unsigned zptr) {
+unsigned inflate_last_consumed(unsigned zptr) {
   struct wasm_inflate_ctx *c = (struct wasm_inflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return 0;

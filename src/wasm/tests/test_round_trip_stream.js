@@ -24,9 +24,9 @@ function packRet(ret) {
   const HEAP = new Uint8Array(memory.buffer);
 
   // --- Deflate (compress) ---
-  const dptr = exp.wasm_deflate_new();
+  const dptr = exp.deflate_new();
   if (dptr === 0) throw new Error('deflate alloc failed');
-  let r = exp.wasm_deflate_init(dptr); // zlib header by default
+  let r = exp.deflate_init(dptr); // zlib header by default
   if (r !== 0) throw new Error('deflate init failed: '+r);
 
   const inPtr = exp.malloc(buf.length);
@@ -49,9 +49,9 @@ function packRet(ret) {
   // Prepare inflater now so we can stream compressed data to it immediately
   const iptrOut = exp.malloc(OUT_WINDOW);
   if (!iptrOut) throw new Error('malloc failed for inflate output');
-  const zptr = exp.wasm_inflate_new();
+  const zptr = exp.inflate_new();
   if (zptr === 0) throw new Error('inflate alloc failed');
-  r = exp.wasm_inflate_init(zptr); // expects zlib header
+  r = exp.inflate_init(zptr); // expects zlib header
   if (r !== 0) throw new Error('inflate init failed: '+r);
 
   let deflate_done = false;
@@ -67,7 +67,7 @@ function packRet(ret) {
     if (!deflate_done) {
       const toRead = Math.min(availIn, 32768);
       const flush = (availIn === 0) ? 4 : 0; // Z_FINISH when no more input
-  const ret = exp.wasm_deflate_process(dptr, inPtr + off, toRead, outPtr + compOutPos, OUT_WINDOW - compOutPos, flush);
+  const ret = exp.deflate_process(dptr, inPtr + off, toRead, outPtr + compOutPos, OUT_WINDOW - compOutPos, flush);
       const produced = ret & 0x00ffffff;
       let code = (ret >> 24) & 0xff;
       if (code & 0x80) code = code - 0x100; // signed conversion
@@ -84,7 +84,7 @@ function packRet(ret) {
         while (compAvail > 0 && !inflate_done) {
           const infToRead = compAvail; // small chunks are fine
           const infFlush = (code === 1 && compAvail === infToRead && availIn === 0) ? 4 : 0;
-          const r2 = exp.wasm_inflate_process(zptr, compHeapPtr + compOff, infToRead, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, infFlush);
+          const r2 = exp.inflate_process(zptr, compHeapPtr + compOff, infToRead, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, infFlush);
           if (r2 < 0) throw new Error('inflate process error: '+r2);
           const produced2 = r2 & 0x00ffffff;
           const code2 = (r2 >> 24) & 0xff;
@@ -93,7 +93,7 @@ function packRet(ret) {
             // append decompressed output immediately to disk buffer
             fs.appendFileSync(outPath, outBuf);
           }
-          const consumed2 = exp.wasm_inflate_last_consumed(zptr);
+          const consumed2 = exp.inflate_last_consumed(zptr);
           compOff += consumed2;
           compAvail -= consumed2;
           if (produced2 === (OUT_WINDOW - decompOutPos)) {
@@ -110,7 +110,7 @@ function packRet(ret) {
         }
       }
 
-      const consumed = exp.wasm_deflate_last_consumed(dptr);
+      const consumed = exp.deflate_last_consumed(dptr);
       off += consumed;
       availIn -= consumed;
 
@@ -128,7 +128,7 @@ function packRet(ret) {
     // --- if deflate is done but inflater not yet finished, drain the inflater ---
     if (deflate_done && !inflate_done) {
       // call inflate with zero new input but with Z_FINISH to flush remaining data
-      const r2 = exp.wasm_inflate_process(zptr, compHeapPtr, 0, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, 4);
+      const r2 = exp.inflate_process(zptr, compHeapPtr, 0, iptrOut + decompOutPos, OUT_WINDOW - decompOutPos, 4);
       if (r2 < 0) throw new Error('inflate process error while draining: '+r2);
       const produced2 = r2 & 0x00ffffff;
       const code2 = (r2 >> 24) & 0xff;
@@ -136,7 +136,7 @@ function packRet(ret) {
         const outBuf = Buffer.from(HEAP.subarray(iptrOut + decompOutPos, iptrOut + decompOutPos + produced2));
         fs.appendFileSync(outPath, outBuf);
       }
-      const consumed2 = exp.wasm_inflate_last_consumed(zptr);
+      const consumed2 = exp.inflate_last_consumed(zptr);
       if (produced2 === (OUT_WINDOW - decompOutPos)) {
         decompOutPos = 0;
       } else {
@@ -151,8 +151,8 @@ function packRet(ret) {
   }
 
   // finalize
-  exp.wasm_deflate_end(dptr);
-  exp.wasm_inflate_end(zptr);
+  exp.deflate_end(dptr);
+  exp.inflate_end(zptr);
 
   const compBuf = Buffer.concat(compChunks);
   // ensure output dir

@@ -15,57 +15,53 @@ function _make(isCompress, type, options = {}) {
 
 	return new TransformStream({
 		start() {
+			let result;
 			this.out = malloc(outBufferSize);
 			this.in = malloc(inBufferSize);
 			this.inBufferSize = inBufferSize;
 			this._heap = new Uint8Array(memory.buffer);
 			this._scratch = new Uint8Array(outBufferSize);
 			if (isCompress) {
-				this.streamHandle = wasm.wasm_deflate_new();
-				let result;
+				this._process = wasm.deflate_process;
+				this._last_consumed = wasm.deflate_last_consumed;
+				this._end = wasm.deflate_end;
+				this.streamHandle = wasm.deflate_new();
 				if (type === "gzip") {
 					result = level >= 0 ?
-						wasm.wasm_deflate_init_gzip_level(this.streamHandle, level) :
-						wasm.wasm_deflate_init_gzip(this.streamHandle);
+						wasm.deflate_init_gzip_level(this.streamHandle, level) :
+						wasm.deflate_init_gzip(this.streamHandle);
 				} else if (type === "deflate-raw") {
 					result = level >= 0 ?
-						wasm.wasm_deflate_init_raw_level(this.streamHandle, level) :
-						wasm.wasm_deflate_init_raw(this.streamHandle);
+						wasm.deflate_init_raw_level(this.streamHandle, level) :
+						wasm.deflate_init_raw(this.streamHandle);
 				} else {
 					result = level >= 0 ?
-						wasm.wasm_deflate_init_level(this.streamHandle, level) :
-						wasm.wasm_deflate_init(this.streamHandle);
+						wasm.deflate_init_level(this.streamHandle, level) :
+						wasm.deflate_init(this.streamHandle);
 				}
-				if (result !== 0) {
-					throw new Error("deflate init failed:" + result);
-				}
-				this._process = wasm.wasm_deflate_process;
-				this._last_consumed = wasm.wasm_deflate_last_consumed;
-				this._end = wasm.wasm_deflate_end;
 			} else {
 				if (type === "deflate64-raw") {
-					this.streamHandle = wasm.wasm_inflate9_new();
-					wasm.wasm_inflate9_init_raw(this.streamHandle);
-					this._process = wasm.wasm_inflate9_process;
-					this._last_consumed = wasm.wasm_inflate9_last_consumed;
-					this._end = wasm.wasm_inflate9_end;
+					this._process = wasm.inflate9_process;
+					this._last_consumed = wasm.inflate9_last_consumed;
+					this._end = wasm.inflate9_end;
+					this.streamHandle = wasm.inflate9_new();
+					wasm.inflate9_init_raw(this.streamHandle);
 				} else {
-					this.streamHandle = wasm.wasm_inflate_new();
-					let result;
+					this._process = wasm.inflate_process;
+					this._last_consumed = wasm.inflate_last_consumed;
+					this._end = wasm.inflate_end;
+					this.streamHandle = wasm.inflate_new();
 					if (type === "deflate-raw") {
-						result = wasm.wasm_inflate_init_raw(this.streamHandle);
+						result = wasm.inflate_init_raw(this.streamHandle);
 					} else if (type === "gzip") {
-						result = wasm.wasm_inflate_init_gzip(this.streamHandle);
+						result = wasm.inflate_init_gzip(this.streamHandle);
 					} else {
-						result = wasm.wasm_inflate_init(this.streamHandle);
+						result = wasm.inflate_init(this.streamHandle);
 					}
-					if (result !== 0) {
-						throw new Error("inflate init failed:" + result);
-					}
-					this._process = wasm.wasm_inflate_process;
-					this._last_consumed = wasm.wasm_inflate_last_consumed;
-					this._end = wasm.wasm_inflate_end;
 				}
+			}
+			if (result !== 0) {
+				throw new Error("init failed:" + result);
 			}
 		},
 		transform(chunk, controller) {
@@ -96,7 +92,7 @@ function _make(isCompress, type, options = {}) {
 						scratch.set(heap.subarray(out, out + prod), 0);
 						controller.enqueue(scratch.slice(0, prod));
 					}
-					const consumed = (last_consumed) ? last_consumed(this.streamHandle) : 0;
+					const consumed = last_consumed(this.streamHandle);
 					if (consumed === 0) {
 						break;
 					}
