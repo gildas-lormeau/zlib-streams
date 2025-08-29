@@ -45,7 +45,7 @@ function _make(isCompress, type, options = {}) {
 					this._last_consumed = wasm.inflate9_last_consumed;
 					this._end = wasm.inflate9_end;
 					this.streamHandle = wasm.inflate9_new();
-					wasm.inflate9_init_raw(this.streamHandle);
+					result = wasm.inflate9_init_raw(this.streamHandle);
 				} else {
 					this._process = wasm.inflate_process;
 					this._last_consumed = wasm.inflate_last_consumed;
