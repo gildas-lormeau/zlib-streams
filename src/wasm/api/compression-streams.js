@@ -90,13 +90,23 @@ function _make(isCompress, type, options = {}) {
 			try {
 				const buf = _norm(chunk);
 				let off = 0;
+
+				// cache hot locals to avoid repeated property lookups
+				const wasm = this.wasm;
+				let heap = this._heap;
+				const process = this._process;
+				const last_consumed = this._last_consumed;
+				const outPtr = this.outPtr;
+				const OUT = this.OUT;
+				const scratch = this._scratch;
+
 				// refresh heap view (memory may grow)
-				if (!this._heap || this._heap.buffer !== this.wasm.memory.buffer) this._heap = new Uint8Array(this.wasm.memory.buffer);
+				if (!heap || heap.buffer !== wasm.memory.buffer) heap = this._heap = new Uint8Array(wasm.memory.buffer);
 
 				while (off < buf.length) {
 					const toRead = Math.min(buf.length - off, 32 * 1024);
 
-					// ensure input buffer is large enough (no pooling, grow if necessary)
+					// ensure input buffer is large enough (grow if necessary)
 					if (!this.inPtr || this.inPtr_sz < toRead) {
 						if (this.inPtr && this._free) try { this._free(this.inPtr); } catch (_) { }
 						this.inPtr = this._malloc(toRead);
@@ -104,24 +114,25 @@ function _make(isCompress, type, options = {}) {
 						if (!this.inPtr) throw new Error("malloc");
 					}
 
-					// copy into wasm heap
-					if (!this._heap || this._heap.buffer !== this.wasm.memory.buffer) this._heap = new Uint8Array(this.wasm.memory.buffer);
-					this._heap.set(buf.subarray(off, off + toRead), this.inPtr);
+					// copy into wasm heap (single copy)
+					if (!heap || heap.buffer !== wasm.memory.buffer) heap = this._heap = new Uint8Array(wasm.memory.buffer);
+					heap.set(buf.subarray(off, off + toRead), this.inPtr);
 
-					const ret = this._process(this.z, this.inPtr, toRead, this.outPtr, this.OUT, 0);
+					// call into wasm
+					const ret = process(this.z, this.inPtr, toRead, outPtr, OUT, 0);
 
 					if (!isCompress && ret < 0) throw new Error("inflate error:" + ret);
 
 					const prod = ret & 0x00ffffff;
 					if (prod) {
-						// copy out of heap
-						const view = this._heap.subarray(this.outPtr, this.outPtr + prod);
-						const outView = new Uint8Array(prod);
-						outView.set(view, 0);
-						controller.enqueue(outView);
+						// copy out of heap into the single scratch buffer (no intermediate allocations)
+						// then create a single slice (one allocation) to hand to the consumer
+						if (!heap || heap.buffer !== wasm.memory.buffer) heap = this._heap = new Uint8Array(wasm.memory.buffer);
+						scratch.set(heap.subarray(outPtr, outPtr + prod), 0);
+						controller.enqueue(scratch.slice(0, prod)); // unavoidable single allocation per queued chunk
 					}
 
-					const consumed = (this._last_consumed) ? this._last_consumed(this.z) : 0;
+					const consumed = (last_consumed) ? last_consumed(this.z) : 0;
 					if (consumed === 0) break;
 					off += consumed;
 				}
@@ -136,18 +147,28 @@ function _make(isCompress, type, options = {}) {
 
 		flush(controller) {
 			try {
-				if (!this._heap || this._heap.buffer !== this.wasm.memory.buffer) this._heap = new Uint8Array(this.wasm.memory.buffer);
+				const wasm = this.wasm;
+				let heap = this._heap;
+				const process = this._process;
+				const outPtr = this.outPtr;
+				const OUT = this.OUT;
+				const scratch = this._scratch;
+
+				if (!heap || heap.buffer !== wasm.memory.buffer) heap = this._heap = new Uint8Array(wasm.memory.buffer);
+
 				while (true) {
-					const ret = this._process(this.z, 0, 0, this.outPtr, this.OUT, 4);
+					const ret = process(this.z, 0, 0, outPtr, OUT, 4);
 					if (!isCompress && ret < 0) throw new Error("inflate error:" + ret);
+
 					const prod = ret & 0x00ffffff;
 					const code = (ret >> 24) & 0xff;
+
 					if (prod) {
-						const view = this._heap.subarray(this.outPtr, this.outPtr + prod);
-						const outView = new Uint8Array(prod);
-						outView.set(view, 0);
-						controller.enqueue(outView);
+						if (!heap || heap.buffer !== wasm.memory.buffer) heap = this._heap = new Uint8Array(wasm.memory.buffer);
+						scratch.set(heap.subarray(outPtr, outPtr + prod), 0);
+						controller.enqueue(scratch.slice(0, prod)); // one allocation per queued final chunk
 					}
+
 					if (code === 1) break;
 					if (prod === 0) break;
 				}
