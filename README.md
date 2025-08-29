@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project provides advanced Deflate/Deflate64 decompression and streaming tools, with a focus on compatibility, testing, and WebAssembly (WASM) support. It includes:
+This project provides Deflate/Deflate64 compression and decompression and streaming tools, with a focus on compatibility, testing, and WebAssembly (WASM) support. It includes:
 
-- C reference implementations for Deflate/Deflate64 decompression (including inflate9/inflateBack9)
+- C reference implementations for Deflate64 decompression
 - Comprehensive test harnesses for verifying decompression correctness
 - WASM builds for use in JavaScript/Node.js/Deno environments
 - Optional generator for creating Deflate64 ZIPs using the 7-Zip SDK
