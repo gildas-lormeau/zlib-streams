@@ -133,7 +133,7 @@ WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/w
 	src/zlib/contrib/infback9/inftree9.c \
 	src/zlib/inffast.c src/zlib/inflate.c src/zlib/inftrees.c src/zlib/zutil.c \
 	src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c src/zlib/deflate.c
-WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2
+WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto
 
 .PHONY: wasm
 wasm: dist/zlib_streams.wasm
@@ -306,9 +306,9 @@ dist/zlib_streams_prod.wasm: $(WASM_SRCS)
 	@echo "Building production wasm $@ using $(EMCC)"
 	@mkdir -p dist
 	# Size-focused flags: -Oz, strip unneeded runtime methods. Keep only the exported functions the JS wrapper calls.
-	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -Oz -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
+	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -Oz -flto -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
 		-s ALLOW_TABLE_GROWTH=1 \
-		-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_wasm_inflate_new","_wasm_inflate_init","_wasm_inflate_init_raw","_wasm_inflate_init_gzip","_wasm_inflate_process","_wasm_inflate_end","_wasm_inflate_last_consumed","_wasm_deflate_new","_wasm_deflate_init","_wasm_deflate_init_raw","_wasm_deflate_init_gzip","_wasm_deflate_process","_wasm_deflate_end","_wasm_deflate_last_consumed","_malloc","_free"]' \
+		-s EXPORTED_FUNCTIONS='["_wasm_inflate9_new","_wasm_inflate9_init_raw","_wasm_inflate9_process","_wasm_inflate9_end","_wasm_inflate9_last_consumed","_malloc","_free"]' \
 		-o $@
 	# optional post-processing using binaryen's wasm-opt if installed (best-effort)
 	@which wasm-opt >/dev/null 2>&1 && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; wasm-opt -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
