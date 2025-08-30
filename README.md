@@ -1,8 +1,4 @@
-# zlib-streams Project
-
-## Overview
-
-This project provides a Compression Streams API in WASM based on zlib and compatible wirg Deflate64 for decompression.
+# zlib-streams Project: WASM-based Compression Streams API implementation using zlib, with support for deflate64 decompression
 
 The zlib source code is included as a submodule in `src/zlib`.
 
@@ -17,8 +13,8 @@ The zlib source code is included as a submodule in `src/zlib`.
 
 ### 1. Clone the repository and initialize submodules
 ```sh
-git clone <repo-url>
-cd project-zlib-streams
+git clone https://github.com/gildas-lormeau/zlib-streams.git
+cd zlib-streams
 git submodule update --init --recursive
 ```
 

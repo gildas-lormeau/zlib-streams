@@ -1,0 +1,8 @@
+deno
+emsdk
+test
+.vscode
+src/7zip
+src/zlib
+src/generator
+src/wasm/tests

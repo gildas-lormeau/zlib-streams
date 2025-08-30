@@ -1,0 +1,31 @@
+{
+  "name": "zlib-streams",
+  "description": "WASM-based Compression Streams API implementation using zlib, with support for deflate64 decompression.",
+  "author": "Gildas Lormeau",
+  "license": "BSD-3-Clause",
+  "version": "1.0.0",
+  "type": "module",
+  "keywords": [
+    "deflate",
+    "gzip",
+    "deflate64",
+    "web-streams",
+    "compression-streams"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./zlib-streams.js": "./dist/zlib-streams.js",
+    "./zlib-streams.wasm": "./dist/zlib-streams.wasm"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gildas-lormeau/zlib-streams.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gildas-lormeau/zlib-streams/issues"
+  },
+  "homepage": "https://gildas-lormeau.github.io/zlib-streams",
+  "publishConfig": {
+    "access": "public"
+  }
+}
