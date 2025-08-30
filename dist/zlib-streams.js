@@ -19,7 +19,6 @@ function _make(isCompress, type, options = {}) {
 			this.out = malloc(outBufferSize);
 			this.in = malloc(inBufferSize);
 			this.inBufferSize = inBufferSize;
-			this._scratch = new Uint8Array(outBufferSize);
 			if (isCompress) {
 				this._process = wasm.deflate_process;
 				this._last_consumed = wasm.deflate_last_consumed;
@@ -70,7 +69,6 @@ function _make(isCompress, type, options = {}) {
 				const process = this._process;
 				const last_consumed = this._last_consumed;
 				const out = this.out;
-				const scratch = this._scratch;
 				let offset = 0;
 				while (offset < buffer.length) {
 					const toRead = Math.min(buffer.length - offset, 32 * 1024);
@@ -88,8 +86,7 @@ function _make(isCompress, type, options = {}) {
 					}
 					const prod = result & 0x00ffffff;
 					if (prod) {
-						scratch.set(heap.subarray(out, out + prod), 0);
-						controller.enqueue(scratch.slice(0, prod));
+						controller.enqueue(heap.slice(out, out + prod));
 					}
 					const consumed = last_consumed(this.streamHandle);
 					if (consumed === 0) {
@@ -115,7 +112,6 @@ function _make(isCompress, type, options = {}) {
 				const heap = new Uint8Array(memory.buffer);
 				const process = this._process;
 				const out = this.out;
-				const scratch = this._scratch;
 				while (true) {
 					const result = process(this.streamHandle, 0, 0, out, outBufferSize, 4);
 					if (!isCompress && result < 0) {
@@ -124,8 +120,7 @@ function _make(isCompress, type, options = {}) {
 					const produced = result & 0x00ffffff;
 					const code = (result >> 24) & 0xff;
 					if (produced) {
-						scratch.set(heap.subarray(out, out + produced), 0);
-						controller.enqueue(scratch.slice(0, produced));
+						controller.enqueue(heap.slice(out, out + produced));
 					}
 					if (code === 1 || produced === 0) {
 						break;
