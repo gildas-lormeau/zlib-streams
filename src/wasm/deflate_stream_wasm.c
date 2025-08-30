@@ -31,30 +31,7 @@ unsigned deflate_new(void) {
   return (unsigned)(uintptr_t)c;
 }
 
-int deflate_init(unsigned zptr) {
-  struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
-  if (!c)
-    return Z_STREAM_ERROR;
-  return deflateInit(&c->strm, Z_DEFAULT_COMPRESSION);
-}
-
-int deflate_init_raw(unsigned zptr) {
-  struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
-  if (!c)
-    return Z_STREAM_ERROR;
-  return deflateInit2(&c->strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -RAW_WBITS,
-                      8, Z_DEFAULT_STRATEGY);
-}
-
-int deflate_init_gzip(unsigned zptr) {
-  struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
-  if (!c)
-    return Z_STREAM_ERROR;
-  return deflateInit2(&c->strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-                      MAX_WBITS + 16, 8, Z_DEFAULT_STRATEGY);
-}
-
-int deflate_init_level(unsigned zptr, int level) {
+int deflate_init(unsigned zptr, int level) {
   struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
@@ -63,7 +40,7 @@ int deflate_init_level(unsigned zptr, int level) {
   return deflateInit(&c->strm, level);
 }
 
-int deflate_init_raw_level(unsigned zptr, int level) {
+int deflate_init_raw(unsigned zptr, int level) {
   struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;
@@ -73,7 +50,7 @@ int deflate_init_raw_level(unsigned zptr, int level) {
                       Z_DEFAULT_STRATEGY);
 }
 
-int deflate_init_gzip_level(unsigned zptr, int level) {
+int deflate_init_gzip(unsigned zptr, int level) {
   struct wasm_deflate_ctx *c = (struct wasm_deflate_ctx *)(uintptr_t)zptr;
   if (!c)
     return Z_STREAM_ERROR;

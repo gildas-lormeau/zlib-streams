@@ -26,17 +26,11 @@ function _make(isCompress, type, options = {}) {
 				this._end = wasm.deflate_end;
 				this.streamHandle = wasm.deflate_new();
 				if (type === "gzip") {
-					result = level >= 0 ?
-						wasm.deflate_init_gzip_level(this.streamHandle, level) :
-						wasm.deflate_init_gzip(this.streamHandle);
+					result = wasm.deflate_init_gzip(this.streamHandle, level);
 				} else if (type === "deflate-raw") {
-					result = level >= 0 ?
-						wasm.deflate_init_raw_level(this.streamHandle, level) :
-						wasm.deflate_init_raw(this.streamHandle);
+					result = wasm.deflate_init_raw(this.streamHandle, level);
 				} else {
-					result = level >= 0 ?
-						wasm.deflate_init_level(this.streamHandle, level) :
-						wasm.deflate_init(this.streamHandle);
+					result = wasm.deflate_init(this.streamHandle, level);
 				}
 			} else {
 				if (type === "deflate64-raw") {
