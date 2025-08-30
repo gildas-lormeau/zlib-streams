@@ -4,7 +4,7 @@ const path = require('path');
 
 const OUTDIR = 'tmp/all_runs';
 if (!fs.existsSync(OUTDIR)) fs.mkdirSync(OUTDIR, { recursive: true });
-const wasm = 'dist/zlib_streams.wasm';
+const wasm = 'dist/zlib-streams-dev.wasm';
 const refdir = 'test/ref-data';
 
 // If payload paths are provided as arguments, use those. Otherwise use all payloads in refdir.

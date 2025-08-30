@@ -14,7 +14,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); Deno
   globalThis.WASM_EXPORTS = exp;
 
   // import the ESM wrapper
-  const mod = await import('../src/wasm/api/compression-streams.js');
+  const mod = await import('../src/wasm/api/zlib-streams.js');
   const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   const LEN = 24000;

@@ -7,13 +7,13 @@ function usage() {
   console.error('usage: node run_roundtrip_cli.js [format] [size] [wasm]');
   console.error('  format: deflate | gzip | deflate-raw | deflate64-raw');
   console.error('  size: bytes (integer)');
-  console.error('  wasm: path to dist/zlib_streams.wasm');
+  console.error('  wasm: path to dist/zlib-streams-dev.wasm');
   process.exit(2);
 }
 
 const format = process.argv[2] || 'deflate';
 const size = parseInt(process.argv[3] || '24000', 10);
-const wasmPath = process.argv[4] || path.join('dist','zlib_streams.wasm');
+const wasmPath = process.argv[4] || path.join('dist','zlib-streams-dev.wasm');
 if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); usage(); }
 if (!['deflate','gzip','deflate-raw','deflate64-raw'].includes(format)) { console.error('unknown format:', format); usage(); }
 if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size); usage(); }
@@ -25,7 +25,7 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   const exp = instance.exports;
   globalThis.WASM_EXPORTS = exp;
 
-  const mod = await import('../api/compression-streams.js');
+  const mod = await import('../api/zlib-streams.js');
   const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   console.log('format=%s size=%d wasm=%s', format, size, wasmPath);

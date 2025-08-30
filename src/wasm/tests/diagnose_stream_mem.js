@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Usage: node diagnose_stream_mem.js [wasm] [--iterations=N] [--packet=bytes] [--log-interval=10]
-const wasmPath = process.argv[2] || path.join('dist','zlib_streams.wasm');
+const wasmPath = process.argv[2] || path.join('dist','zlib-streams-dev.wasm');
 let ITER = 700;
 let PACKET = 1024;
 let LOG_INTERVAL = 20;
@@ -20,7 +20,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   const exp = instance.exports;
   globalThis.WASM_EXPORTS = exp;
 
-  const mod = await import('../api/compression-streams.js');
+  const mod = await import('../api/zlib-streams.js');
   const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   function statsLine(iter) {

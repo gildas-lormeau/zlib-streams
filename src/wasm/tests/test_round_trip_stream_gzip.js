@@ -5,7 +5,7 @@ if (process.argv.length < 2) {
   console.error('usage: node test_round_trip_stream_gzip.js [wasm]');
   process.exit(2);
 }
-const wasmPath = process.argv[2] || path.join('dist','zlib_streams.wasm');
+const wasmPath = process.argv[2] || path.join('dist','zlib-streams-dev.wasm');
 if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
 (async ()=>{
@@ -15,7 +15,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   // make available to the module if it expects globalThis.WASM_EXPORTS
   globalThis.WASM_EXPORTS = exp;
 
-  const mod = await import('../api/compression-streams.js');
+  const mod = await import('../api/zlib-streams.js');
   const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   // prepare random test data

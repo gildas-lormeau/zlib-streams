@@ -125,7 +125,7 @@ ci:
 -include $(PD_OBJS:.o=.d) $(PD_DEBUG_OBJS:.o=.d)
 
 # -----------------------------------------------------------------------------
-# WASM build target (convenience target to produce dist/zlib_streams.wasm)
+# WASM build target (convenience target to produce dist/zlib-streams-dev.wasm)
 # -----------------------------------------------------------------------------
 EMCC ?= emsdk/upstream/emscripten/emcc
 
@@ -136,12 +136,12 @@ WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/w
 WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto
 
 .PHONY: wasm
-wasm: dist/zlib_streams.wasm
+wasm: dist/zlib-streams-dev.wasm
 
 .PHONY: wasm_traced
-wasm_traced: dist/zlib_streams_traced.wasm
+wasm_traced: dist/zlib-streams_traced.wasm
 
-dist/zlib_streams_traced.wasm: $(WASM_SRCS)
+dist/zlib-streams_traced.wasm: $(WASM_SRCS)
 	@echo "Building traced $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) $(DEBUG_DEFINES_TRACED) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
@@ -156,14 +156,14 @@ run_ref_c_tests: test/payload_decompress_test_debug test/payload_decompress_ref_
 	@./test/run_deflate64_suite.sh
 
 .PHONY: run_ref_wasm_tests
-run_ref_wasm_tests: dist/zlib_streams.wasm
+run_ref_wasm_tests: dist/zlib-streams-dev.wasm
 	@echo "Running WASM runner over deflate64 payloads (sequential by default)"
 	@mkdir -p tmp/all_runs
 	@$(MAKE) run_ref_wasm_seq
 	@$(MAKE) run_wasm_roundtrip_mem
 
 .PHONY: run_ref_wasm_seq
-run_ref_wasm_seq: dist/zlib_streams.wasm
+run_ref_wasm_seq: dist/zlib-streams-dev.wasm
 	@echo "Running WASM runner sequentially per payload (safe, non-blocking)"
 	@mkdir -p tmp/all_runs
 	@sh -c '\
@@ -172,7 +172,7 @@ run_ref_wasm_seq: dist/zlib_streams.wasm
 		f=$$(basename "$$p"); \
 		printf "\nPayload: %s\n" "$$f"; \
 		rm -f tmp/all_runs/wasm__$$f.out; \
-		node src/wasm/tests/test_inflate9_stream.js dist/zlib_streams.wasm "$$p" tmp/all_runs/wasm__$$f.out || printf "  NODE_RC:%s for %s\n" "$$?" "$$f"; \
+		node src/wasm/tests/test_inflate9_stream.js dist/zlib-streams-dev.wasm "$$p" tmp/all_runs/wasm__$$f.out || printf "  NODE_RC:%s for %s\n" "$$?" "$$f"; \
 		if [ -f tmp/all_runs/wasm__$$f.out ]; then \
 			printf "  wrote tmp/all_runs/wasm__%s.out (size=%s)\n" "$$f" "$(stat -f%z tmp/all_runs/wasm__$$f.out 2>/dev/null || echo unknown)"; \
 			ref=tmp/all_runs/payload_decompress_ref_debug__$$f.out; \
@@ -195,7 +195,7 @@ run_ref_tests: run_ref_c_tests run_ref_wasm_tests
 	@echo "Completed C+WASM reference test suites"
 
 .PHONY: run_wasm_roundtrip
-run_wasm_roundtrip: dist/zlib_streams.wasm
+run_wasm_roundtrip: dist/zlib-streams-dev.wasm
 	@echo "Running wasm roundtrip tests over tmp/all_runs/roundtrip_input*"
 	@mkdir -p tmp/all_runs
 	# populate tmp/all_runs with canonical roundtrip inputs
@@ -208,7 +208,7 @@ for p in tmp/all_runs/roundtrip_input*; do \
 		f=$$(basename "$$p"); \
 		printf "\nInput: %s\n" "$$f"; \
 		rm -f tmp/all_runs/roundtrip_out__$$f; \
-		node src/wasm/tests/test_round_trip_stream.js dist/zlib_streams.wasm "$$p" tmp/all_runs/roundtrip_out__$$f 2>&1 | sed -n '1,200p'; \
+		node src/wasm/tests/test_round_trip_stream.js dist/zlib-streams-dev.wasm "$$p" tmp/all_runs/roundtrip_out__$$f 2>&1 | sed -n '1,200p'; \
 		rc=$$?; \
 		if [ $$rc -eq 0 ]; then \
 			printf "  OK: %s\n" "$$f"; \
@@ -218,7 +218,7 @@ for p in tmp/all_runs/roundtrip_input*; do \
 	done'
 
 .PHONY: run_wasm_roundtrip_mem
-run_wasm_roundtrip_mem: dist/zlib_streams.wasm
+run_wasm_roundtrip_mem: dist/zlib-streams-dev.wasm
 	@echo "Running wasm roundtrip (in-memory) tests over tmp/all_runs/roundtrip_input*"
 	@mkdir -p tmp/all_runs
 	@sh -c '\
@@ -226,7 +226,7 @@ run_wasm_roundtrip_mem: dist/zlib_streams.wasm
 		[ -f "$$p" ] || continue; \
 		f=$$(basename "$$p"); \
 		printf "\nInput: %s\n" "$$f"; \
-		node src/wasm/tests/test_round_trip_stream_mem.js dist/zlib_streams.wasm "$$p" 2>&1 | sed -n "1,200p"; \
+		node src/wasm/tests/test_round_trip_stream_mem.js dist/zlib-streams-dev.wasm "$$p" 2>&1 | sed -n "1,200p"; \
 		rc=$$?; \
 		if [ $$rc -eq 0 ]; then \
 			printf "  OK: %s\n" "$$f"; \
@@ -236,64 +236,66 @@ run_wasm_roundtrip_mem: dist/zlib_streams.wasm
 	done'
 
 .PHONY: run_transform_roundtrip
-run_transform_roundtrip: dist/zlib_streams.wasm
+run_transform_roundtrip: dist/zlib-streams-dev.wasm
 	@echo "Running TransformStream roundtrip test"
-	@node src/wasm/tests/test_transform_roundtrip.js dist/zlib_streams.wasm
+	@node src/wasm/tests/test_transform_roundtrip.js dist/zlib-streams-dev.wasm
 
 .PHONY: deno_run_tests
 deno_run_tests:
 	@echo "Running Deno test suite (deno/run_all_tests.sh)"
 	@chmod +x deno/run_all_tests.sh || true
-	@./deno/run_all_tests.sh dist/zlib_streams_prod.wasm
+	@./deno/run_all_tests.sh dist/zlib-streams.wasm
 
 .PHONY: run_inflate9_roundtrip_all
-run_inflate9_roundtrip_all: dist/zlib_streams.wasm
+run_inflate9_roundtrip_all: dist/zlib-streams-dev.wasm
 	@echo "Running inflate9 roundtrip over deflate64 payloads"
-	@node src/wasm/tests/test_inflate9_roundtrip_all.js dist/zlib_streams.wasm
+	@node src/wasm/tests/test_inflate9_roundtrip_all.js dist/zlib-streams-dev.wasm
 
 .PHONY: test_decompressionstream_inflate9
-test_decompressionstream_inflate9: dist/zlib_streams.wasm
+test_decompressionstream_inflate9: dist/zlib-streams-dev.wasm
 	@echo "Testing DecompressionStreamZlib against native inflate9 for deflate64 payloads"
-	@node src/wasm/tests/test_decompressionstream_inflate9.js dist/zlib_streams.wasm
+	@node src/wasm/tests/test_decompressionstream_inflate9.js dist/zlib-streams-dev.wasm
 
 
 # Single target to run the main wasm/TransformStream tests used during development
 .PHONY: run_all_tests
-run_all_tests: dist/zlib_streams.wasm
+run_all_tests: dist/zlib-streams-dev.wasm
 	@echo "Running all wasm TransformStream tests"
 	@$(MAKE) run_ref_wasm_tests
 	@$(MAKE) run_wasm_roundtrip
 	# Additional roundtrip tests not covered by the generic runners
-	@node src/wasm/tests/test_round_trip_stream_deflate.js dist/zlib_streams.wasm
-	@node src/wasm/tests/test_round_trip_stream_gzip.js dist/zlib_streams.wasm
+	@node src/wasm/tests/test_round_trip_stream_deflate.js dist/zlib-streams-dev.wasm
+	@node src/wasm/tests/test_round_trip_stream_gzip.js dist/zlib-streams-dev.wasm
 	@mkdir -p tmp/all_runs
 	# Ensure a raw-deflate test input exists (create from a repeated pattern)
 	@node -e "const fs=require('fs'), z=require('zlib'); fs.writeFileSync('tmp/all_runs/roundtrip_input3.bin', z.deflateRawSync(Buffer.alloc(24000, 'x')));"
-	@node src/wasm/tests/test_inflate_stream.js dist/zlib_streams.wasm tmp/all_runs/roundtrip_input3.bin tmp/all_runs/inflate_stream_out.bin
+	@node src/wasm/tests/test_inflate_stream.js dist/zlib-streams-dev.wasm tmp/all_runs/roundtrip_input3.bin tmp/all_runs/inflate_stream_out.bin
 	# CLI helper run (small sample) for regressions/throughput checks
-	@node src/wasm/tests/run_roundtrip_cli.js deflate 24000 dist/zlib_streams.wasm
+	@node src/wasm/tests/run_roundtrip_cli.js deflate 24000 dist/zlib-streams-dev.wasm
 	@$(MAKE) run_transform_roundtrip
 	@$(MAKE) test_decompressionstream_inflate9
 	@echo "Completed run_all_tests"
 
-dist/zlib_streams.wasm: $(WASM_SRCS)
+dist/zlib-streams-dev.wasm: $(WASM_SRCS)
 	@echo "Building $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
 		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_level","_deflate_init_raw_level","_deflate_init_gzip","_deflate_init_gzip_level","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
+	cp src/wasm/api/zlib-streams.js dist/zlib-streams.js
 
 # Production-optimized wasm: smaller build with -Oz and no extra runtime methods.
 .PHONY: wasm_prod
-wasm_prod: dist/zlib_streams_prod.wasm
+wasm_prod: dist/zlib-streams.wasm
 
-dist/zlib_streams_prod.wasm: $(WASM_SRCS)
+dist/zlib-streams.wasm: $(WASM_SRCS)
 	@echo "Building production wasm $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -Oz -flto -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
 		-s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=1 \
 		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_level","_deflate_init_raw_level","_deflate_init_gzip","_deflate_init_gzip_level","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
+	cp src/wasm/api/zlib-streams.js dist/zlib-streams.js
 	@which wasm-opt >/dev/null 2>&1 && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; wasm-opt -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
 
 # -----------------------------------------------------------------------------

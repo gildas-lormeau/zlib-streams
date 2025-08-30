@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 (async function () {
-    const wasmPath = process.argv[2] || path.join('dist', 'zlib_streams.wasm');
+    const wasmPath = process.argv[2] || path.join('dist', 'zlib-streams-dev.wasm');
     if (!fs.existsSync(wasmPath)) {
         console.error('wasm not found at', wasmPath);
         process.exit(2);
@@ -13,7 +13,7 @@ const crypto = require('crypto');
     const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: () => { } } });
     const exp = instance.exports;
     
-    const mod = await import('../api/compression-streams.js');
+    const mod = await import('../api/zlib-streams.js');
     const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
     setWasmExports(exp);
 

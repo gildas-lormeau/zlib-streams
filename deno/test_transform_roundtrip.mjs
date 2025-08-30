@@ -4,7 +4,7 @@ if (Deno.args.length < 1) {
   console.error('usage: deno run --allow-read deno/test_transform_roundtrip.mjs [wasm]');
   Deno.exit(2);
 }
-const wasmPath = Deno.args[0] || path.join('dist', 'zlib_streams.wasm');
+const wasmPath = Deno.args[0] || path.join('dist', 'zlib-streams-dev.wasm');
 if (!fs.existsSync(wasmPath)) { console.error('wasm not found at', wasmPath); Deno.exit(2); }
 
 (async function () {
@@ -13,7 +13,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found at', wasmPath); De
   const exp = instance.exports;
   globalThis.WASM_EXPORTS = exp;
 
-  const mod = await import('../src/wasm/api/compression-streams.js');
+  const mod = await import('../src/wasm/api/zlib-streams.js');
   const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
 
   const LEN = 24000;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WASM=${1:-dist/zlib_streams_prod.wasm}
+WASM=${1:-dist/zlib-streams.wasm}
 DENO=${DENO:-deno}
 # Don't include --compat (not available in all Deno builds). Use granular unstable flags + permissions.
 # `--unstable-detect-cjs` lets Deno detect CommonJS modules (so older Node-style tests may run under Deno)

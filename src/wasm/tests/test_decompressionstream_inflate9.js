@@ -22,7 +22,7 @@ if (files.length === 0) {
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
   // prefer an explicit module-level setter so callers don't need to pass the wasm object
-  const mod = await import('../api/compression-streams.js');
+  const mod = await import('../api/zlib-streams.js');
   if (typeof mod.setWasmExports === 'function') mod.setWasmExports(exp); else globalThis.WASM_EXPORTS = exp;
   const { DecompressionStreamZlib } = mod;
 
