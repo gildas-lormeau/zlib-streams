@@ -19,7 +19,6 @@ function _make(isCompress, type, options = {}) {
 			this.out = malloc(outBufferSize);
 			this.in = malloc(inBufferSize);
 			this.inBufferSize = inBufferSize;
-			this._heap = new Uint8Array(memory.buffer);
 			this._scratch = new Uint8Array(outBufferSize);
 			if (isCompress) {
 				this._process = wasm.deflate_process;
@@ -67,7 +66,7 @@ function _make(isCompress, type, options = {}) {
 		transform(chunk, controller) {
 			try {
 				const buffer = chunk;
-				const heap = this._heap;
+				const heap = new Uint8Array(memory.buffer);
 				const process = this._process;
 				const last_consumed = this._last_consumed;
 				const out = this.out;
@@ -113,7 +112,7 @@ function _make(isCompress, type, options = {}) {
 		},
 		flush(controller) {
 			try {
-				const heap = this._heap;
+				const heap = new Uint8Array(memory.buffer);
 				const process = this._process;
 				const out = this.out;
 				const scratch = this._scratch;
