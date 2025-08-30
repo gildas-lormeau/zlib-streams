@@ -27,8 +27,8 @@ const crypto = require('crypto');
     const writer = pump.writable.getWriter();
 
     // create pipeline
-    const cs = new CompressionStreamZlib('deflate', { wasm: exp });
-    const ds = new DecompressionStreamZlib('deflate', { wasm: exp });
+    const cs = new CompressionStreamZlib('deflate');
+    const ds = new DecompressionStreamZlib('deflate');
     const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
     const reader = outStream.getReader();
 

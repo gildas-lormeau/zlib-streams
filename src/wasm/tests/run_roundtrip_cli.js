@@ -23,10 +23,10 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   const wasmBuf = fs.readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
-  globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/zlib-streams.js');
-  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
+  setWasmExports(exp);
 
   console.log('format=%s size=%d wasm=%s', format, size, wasmPath);
 
@@ -36,8 +36,8 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   const pump = new TransformStream();
   const writer = pump.writable.getWriter();
 
-  const cs = new CompressionStreamZlib(format, { wasm: exp });
-  const ds = new DecompressionStreamZlib(format, { wasm: exp });
+  const cs = new CompressionStreamZlib(format);
+  const ds = new DecompressionStreamZlib(format);
   const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
   const reader = outStream.getReader();
 

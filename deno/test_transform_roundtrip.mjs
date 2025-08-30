@@ -11,10 +11,10 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found at', wasmPath); De
   const wasmBuf = fs.readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: () => { } } });
   const exp = instance.exports;
-  globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../src/wasm/api/zlib-streams.js');
-  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
+  setWasmExports(exp);
 
   const LEN = 24000;
   const srcBuf = Buffer.allocUnsafe(LEN);
@@ -23,8 +23,8 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found at', wasmPath); De
   const pump = new TransformStream();
   const writer = pump.writable.getWriter();
 
-  const cs = new CompressionStreamZlib('deflate', { wasm: exp });
-  const ds = new DecompressionStreamZlib('deflate', { wasm: exp });
+  const cs = new CompressionStreamZlib('deflate');
+  const ds = new DecompressionStreamZlib('deflate');
   const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
   const reader = outStream.getReader();
 

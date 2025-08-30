@@ -21,7 +21,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
   // deflate setup
   const dptr = exp.deflate_new();
   if (dptr === 0) throw new Error('deflate alloc failed');
-  let r = exp.deflate_init(dptr);
+  let r = exp.deflate_init(dptr, -1);
   if (r !== 0) throw new Error('deflate init failed: '+r);
 
   const inPtr = exp.malloc(buf.length);

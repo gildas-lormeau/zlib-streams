@@ -13,10 +13,10 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
   // make available to the module if it expects globalThis.WASM_EXPORTS
-  globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/zlib-streams.js');
-  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
+  setWasmExports(exp);
 
   // prepare random test data
   const LEN = 24000;
@@ -28,8 +28,8 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   const writer = pump.writable.getWriter();
 
   // create pipeline: compress with gzip then immediately decompress
-  const cs = new CompressionStreamZlib('gzip', { wasm: exp });
-  const ds = new DecompressionStreamZlib('gzip', { wasm: exp });
+  const cs = new CompressionStreamZlib('gzip');
+  const ds = new DecompressionStreamZlib('gzip');
   const outStream = pump.readable.pipeThrough(cs).pipeThrough(ds);
   const reader = outStream.getReader();
 

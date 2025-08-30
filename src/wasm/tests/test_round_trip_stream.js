@@ -26,7 +26,7 @@ function packRet(ret) {
   // --- Deflate (compress) ---
   const dptr = exp.deflate_new();
   if (dptr === 0) throw new Error('deflate alloc failed');
-  let r = exp.deflate_init(dptr); // zlib header by default
+  let r = exp.deflate_init(dptr, -1);
   if (r !== 0) throw new Error('deflate init failed: '+r);
 
   const inPtr = exp.malloc(buf.length);
