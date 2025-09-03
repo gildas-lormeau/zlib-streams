@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "zlib.h"
 #include "inflate9.h"
+#include "allocator.h"
 #ifndef DEFLATE64_WBITS
 #if defined(MAX_WBITS) && (MAX_WBITS >= 16)
 #define DEFLATE64_WBITS MAX_WBITS
@@ -23,8 +24,8 @@ unsigned inflate9_new(void) {
   if (!c)
     return 0;
   memset(c, 0, sizeof(*c));
-  c->strm.zalloc = Z_NULL;
-  c->strm.zfree = Z_NULL;
+  c->strm.zalloc = my_zalloc;
+  c->strm.zfree = my_zfree;
   c->strm.opaque = Z_NULL;
   c->inbuf = NULL;
   c->inbuf_sz = 0;
