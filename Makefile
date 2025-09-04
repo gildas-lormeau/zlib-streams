@@ -129,7 +129,7 @@ ci:
 # -----------------------------------------------------------------------------
 EMCC ?= emsdk/upstream/emscripten/emcc
 
-WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/wasm/deflate_stream_wasm.c src/wasm/allocator.c src/inflate9.c \
+WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/wasm/deflate_stream_wasm.c src/wasm/wasm_stream_common.c src/wasm/allocator.c src/inflate9.c \
 	src/zlib/contrib/infback9/inftree9.c \
 	src/zlib/inffast.c src/zlib/inflate.c src/zlib/inftrees.c src/zlib/zutil.c \
 	src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c src/zlib/deflate.c
