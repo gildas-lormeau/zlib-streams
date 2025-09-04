@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const child = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import child from 'child_process';
 
 if (process.argv.length < 3) {
   console.error('usage: node test_decompressionstream_inflate9.js <wasm>');

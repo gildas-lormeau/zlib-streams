@@ -6,7 +6,6 @@
 #include "zutil.h"
 #include "inftree9.h"
 #include "inflate.h"
-#include "inffast9.h"
 #include "infback9.h"
 
 #ifdef MAKEFIXED
@@ -650,14 +649,6 @@ int ZEXPORT inflate9(z_streamp strm, int flush) {
       state->mode = LEN;
       /* fallthrough */
     case LEN:
-      if (have >= 6 && left >= 65536) {
-        RESTORE();
-        inflate_fast9(strm, out);
-        LOAD();
-        if (state->mode == TYPE)
-          state->back = -1;
-        break;
-      }
       state->back = 0;
       for (;;) {
         here = state->lencode[BITS(state->lenbits)];

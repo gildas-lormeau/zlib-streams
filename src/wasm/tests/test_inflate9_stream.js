@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 if (process.argv.length < 5) {
   console.error('usage: node test_inflate_stream.js <wasm> <infile> <outfile>');
   process.exit(2);
