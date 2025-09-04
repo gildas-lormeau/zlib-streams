@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { randomFillSync } from 'crypto';
 
 function usage() {
   console.error('usage: node run_roundtrip_cli.js [format] [size] [wasm]');
@@ -13,14 +13,14 @@ function usage() {
 
 const format = process.argv[2] || 'deflate';
 const size = parseInt(process.argv[3] || '24000', 10);
-const wasmPath = process.argv[4] || path.join('dist','zlib-streams-dev.wasm');
-if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); usage(); }
+const wasmPath = process.argv[4] || join('dist','zlib-streams-dev.wasm');
+if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); usage(); }
 if (!['deflate','gzip','deflate-raw','deflate64-raw'].includes(format)) { console.error('unknown format:', format); usage(); }
 if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size); usage(); }
 
 (async ()=>{
   const startAll = Date.now();
-  const wasmBuf = fs.readFileSync(wasmPath);
+  const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
 
@@ -31,7 +31,7 @@ if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size);
   console.log('format=%s size=%d wasm=%s', format, size, wasmPath);
 
   const srcBuf = Buffer.allocUnsafe(size);
-  crypto.randomFillSync(srcBuf);
+  randomFillSync(srcBuf);
 
   const pump = new TransformStream();
   const writer = pump.writable.getWriter();

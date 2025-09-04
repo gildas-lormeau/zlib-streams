@@ -1,15 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { randomFillSync } from 'crypto';
 
 if (process.argv.length < 2) {
   console.error('usage: node test_round_trip_stream_gzip.js [wasm]');
   process.exit(2);
 }
-const wasmPath = process.argv[2] || path.join('dist','zlib-streams-dev.wasm');
-if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
+const wasmPath = process.argv[2] || join('dist','zlib-streams-dev.wasm');
+if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
 (async ()=>{
-  const wasmBuf = fs.readFileSync(wasmPath);
+  const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
   // make available to the module if it expects globalThis.WASM_EXPORTS
@@ -21,7 +22,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   // prepare random test data
   const LEN = 24000;
   const srcBuf = Buffer.allocUnsafe(LEN);
-  require('crypto').randomFillSync(srcBuf);
+  randomFillSync(srcBuf);
 
   // create a TransformStream to act as an async writable source
   const pump = new TransformStream();

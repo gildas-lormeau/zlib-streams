@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, appendFileSync } from 'fs';
+import path from 'path';
 if (process.argv.length < 5) {
   console.error('usage: node test_inflate_stream.js <wasm> <infile> <outfile>');
   process.exit(2);
@@ -8,8 +8,8 @@ const wasmPath = process.argv[2];
 const inPath = process.argv[3];
 const outPath = process.argv[4];
 
-const buf = fs.readFileSync(inPath);
-const wasmBuf = fs.readFileSync(wasmPath);
+const buf = readFileSync(inPath);
+const wasmBuf = readFileSync(wasmPath);
 
 (async () => {
   const { instance } = await WebAssembly.instantiate(wasmBuf, {
@@ -48,7 +48,7 @@ const wasmBuf = fs.readFileSync(wasmPath);
     const code = (ret >> 24) & 0xff;
     // copy produced out
   const outBuf = Buffer.from(HEAP.subarray(outPtr + outPos, outPtr + outPos + produced));
-  fs.appendFileSync(outPath, outBuf);
+  appendFileSync(outPath, outBuf);
   /* Advance by the number of input bytes actually consumed by the
    * wasm inflate implementation. This prevents truncating the compressed
    * stream when inflate does not consume the whole supplied chunk.

@@ -1,17 +1,17 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const { performance } = require('perf_hooks');
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { randomFillSync } from 'crypto';
+import { performance } from 'perf_hooks';
 
 if (process.argv.length < 2) {
   console.error('usage: node test_round_trip_stream_perf.js [wasm]');
   process.exit(2);
 }
-const wasmPath = process.argv[2] || path.join('dist','zlib-streams-dev.wasm');
-if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
+const wasmPath = process.argv[2] || join('dist','zlib-streams-dev.wasm');
+if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
 (async ()=>{
-  const wasmBuf = fs.readFileSync(wasmPath);
+  const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
   globalThis.WASM_EXPORTS = exp;
@@ -66,7 +66,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
 
         // allocate and fill source buffer once per size and reuse for MEDIAN runs
         const src = Buffer.allocUnsafe(size);
-        crypto.randomFillSync(src);
+        randomFillSync(src);
 
         for (let run = 0; run < MEDIAN_RUNS; run++) {
           // --- compress-only ---

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import { readFileSync } from 'fs';
+import path from 'path';
 if (process.argv.length < 4) {
   console.error('usage: node test_round_trip_stream_mem.js <wasm> <infile>');
   process.exit(2);
@@ -7,8 +7,8 @@ if (process.argv.length < 4) {
 const wasmPath = process.argv[2];
 const inPath = process.argv[3];
 
-const buf = fs.readFileSync(inPath);
-const wasmBuf = fs.readFileSync(wasmPath);
+const buf = readFileSync(inPath);
+const wasmBuf = readFileSync(wasmPath);
 
 (async () => {
   const { instance } = await WebAssembly.instantiate(wasmBuf, {

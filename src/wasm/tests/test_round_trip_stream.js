@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from 'fs';
+import { dirname, basename, join } from 'path';
 if (process.argv.length < 5) {
   console.error('usage: node test_round_trip_stream.js <wasm> <infile> <out_decompressed>');
   process.exit(2);
@@ -8,8 +8,8 @@ const wasmPath = process.argv[2];
 const inPath = process.argv[3];
 const outPath = process.argv[4];
 
-const buf = fs.readFileSync(inPath);
-const wasmBuf = fs.readFileSync(wasmPath);
+const buf = readFileSync(inPath);
+const wasmBuf = readFileSync(wasmPath);
 
 function packRet(ret) {
   return { produced: ret & 0x00ffffff, code: (ret >> 24) & 0xff };
@@ -58,7 +58,7 @@ function packRet(ret) {
   let inflate_done = false;
 
   // clear output file before streaming
-  fs.writeFileSync(outPath, '');
+  writeFileSync(outPath, '');
 
   // single streaming loop: drive deflate then feed produced bytes into inflate
   let decompOutPos = 0;
@@ -91,7 +91,7 @@ function packRet(ret) {
           if (produced2 > 0) {
             const outBuf = Buffer.from(HEAP.subarray(iptrOut + decompOutPos, iptrOut + decompOutPos + produced2));
             // append decompressed output immediately to disk buffer
-            fs.appendFileSync(outPath, outBuf);
+            appendFileSync(outPath, outBuf);
           }
           const consumed2 = exp.inflate_last_consumed(zptr);
           compOff += consumed2;
@@ -134,7 +134,7 @@ function packRet(ret) {
       const code2 = (r2 >> 24) & 0xff;
       if (produced2 > 0) {
         const outBuf = Buffer.from(HEAP.subarray(iptrOut + decompOutPos, iptrOut + decompOutPos + produced2));
-        fs.appendFileSync(outPath, outBuf);
+        appendFileSync(outPath, outBuf);
       }
       const consumed2 = exp.inflate_last_consumed(zptr);
       if (produced2 === (OUT_WINDOW - decompOutPos)) {
@@ -156,14 +156,14 @@ function packRet(ret) {
 
   const compBuf = Buffer.concat(compChunks);
   // ensure output dir
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  const base = path.basename(inPath);
-  const compPath = path.join('tmp', 'all_runs', 'wasm_roundtrip_comp__' + base + '.out');
-  fs.mkdirSync(path.dirname(compPath), { recursive: true });
-  fs.writeFileSync(compPath, compBuf);
+  mkdirSync(dirname(outPath), { recursive: true });
+  const base = basename(inPath);
+  const compPath = join('tmp', 'all_runs', 'wasm_roundtrip_comp__' + base + '.out');
+  mkdirSync(dirname(compPath), { recursive: true });
+  writeFileSync(compPath, compBuf);
 
   // Decompressed output was streamed to `outPath` during the single-loop above.
-  const decompBuf = fs.readFileSync(outPath);
+  const decompBuf = readFileSync(outPath);
   console.log('wrote', outPath);
 
   // Verify round-trip equality

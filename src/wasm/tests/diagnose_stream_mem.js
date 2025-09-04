@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { randomFillSync } from 'crypto';
 
 // Usage: node diagnose_stream_mem.js [wasm] [--iterations=N] [--packet=bytes] [--log-interval=10]
-const wasmPath = process.argv[2] || path.join('dist','zlib-streams-dev.wasm');
+const wasmPath = process.argv[2] || join('dist','zlib-streams-dev.wasm');
 let ITER = 700;
 let PACKET = 1024;
 let LOG_INTERVAL = 20;
@@ -12,10 +12,10 @@ for (const a of process.argv.slice(2)) {
   if (a.startsWith('--packet=')) PACKET = Number(a.split('=')[1]);
   if (a.startsWith('--log-interval=')) LOG_INTERVAL = Number(a.split('=')[1]);
 }
-if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
+if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
 (async ()=>{
-  const wasmBuf = fs.readFileSync(wasmPath);
+  const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
 
@@ -37,7 +37,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
   const lines = [];
   // small source buffer reused
   const src = Buffer.allocUnsafe(PACKET);
-  crypto.randomFillSync(src);
+  randomFillSync(src);
 
   for (let i = 1; i <= ITER; i++) {
     // create a single pump and pipeline: write the src once
@@ -74,7 +74,7 @@ if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); proc
 
   console.log('\nfinal sample: ', lines[lines.length-1]);
   // write CSV for offline inspection
-  try { fs.mkdirSync(path.join('tmp','diagnose'), { recursive: true }); fs.writeFileSync(path.join('tmp','diagnose','diagnose_stream_mem.json'), JSON.stringify(lines, null, 2)); } catch(e) {}
+  try { mkdirSync(join('tmp','diagnose'), { recursive: true }); writeFileSync(join('tmp','diagnose','diagnose_stream_mem.json'), JSON.stringify(lines, null, 2)); } catch(e) {}
   console.log('wrote tmp/diagnose/diagnose_stream_mem.json');
   process.exit(0);
 })();
