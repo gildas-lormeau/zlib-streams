@@ -765,7 +765,7 @@ int ZEXPORT inflate9(z_streamp strm, int flush) {
             break;
           }
 #ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
-          Trace((stderr, "inflate.c too far\n"));
+          Trace((stderr, "inflate9.c too far\n"));
           copy -= state->whave;
           if (copy > state->length)
             copy = state->length;
