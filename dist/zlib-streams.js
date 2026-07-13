@@ -1,4 +1,5 @@
-/* global TransformStream */
+/* eslint-disable no-unused-vars */
+/* global Buffer, process, TransformStream */
 
 let wasm, malloc, free, memory;
 
@@ -18,54 +19,46 @@ function _make(isCompress, type, options = {}) {
 
 	return new TransformStream({
 		start() {
-			try {
-				let result;
-				this.out = malloc(outBufferSize);
-				this.in = malloc(inBufferSize);
-				this.inBufferSize = inBufferSize;
-				if (!this.out || !this.in) {
-					throw new Error("allocation failed");
-				}
-				this._scratch = new Uint8Array(outBufferSize);
-				if (isCompress) {
-					this._process = wasm.deflate_process;
-					this._last_consumed = wasm.deflate_last_consumed;
-					this._end = wasm.deflate_end;
-					this.streamHandle = wasm.deflate_new();
-					if (type === "gzip") {
-						result = wasm.deflate_init_gzip(this.streamHandle, level);
-					} else if (type === "deflate-raw") {
-						result = wasm.deflate_init_raw(this.streamHandle, level);
-					} else {
-						result = wasm.deflate_init(this.streamHandle, level);
-					}
+			let result;
+			this.out = malloc(outBufferSize);
+			this.in = malloc(inBufferSize);
+			this.inBufferSize = inBufferSize;
+			this._scratch = new Uint8Array(outBufferSize);
+			if (isCompress) {
+				this._process = wasm.deflate_process;
+				this._last_consumed = wasm.deflate_last_consumed;
+				this._end = wasm.deflate_end;
+				this.streamHandle = wasm.deflate_new();
+				if (type === "gzip") {
+					result = wasm.deflate_init_gzip(this.streamHandle, level);
+				} else if (type === "deflate-raw") {
+					result = wasm.deflate_init_raw(this.streamHandle, level);
 				} else {
-					if (type === "deflate64-raw") {
-						this._process = wasm.inflate9_process;
-						this._last_consumed = wasm.inflate9_last_consumed;
-						this._end = wasm.inflate9_end;
-						this.streamHandle = wasm.inflate9_new();
-						result = wasm.inflate9_init_raw(this.streamHandle);
+					result = wasm.deflate_init(this.streamHandle, level);
+				}
+			} else {
+				if (type === "deflate64-raw") {
+					this._process = wasm.inflate9_process;
+					this._last_consumed = wasm.inflate9_last_consumed;
+					this._end = wasm.inflate9_end;
+					this.streamHandle = wasm.inflate9_new();
+					result = wasm.inflate9_init_raw(this.streamHandle);
+				} else {
+					this._process = wasm.inflate_process;
+					this._last_consumed = wasm.inflate_last_consumed;
+					this._end = wasm.inflate_end;
+					this.streamHandle = wasm.inflate_new();
+					if (type === "deflate-raw") {
+						result = wasm.inflate_init_raw(this.streamHandle);
+					} else if (type === "gzip") {
+						result = wasm.inflate_init_gzip(this.streamHandle);
 					} else {
-						this._process = wasm.inflate_process;
-						this._last_consumed = wasm.inflate_last_consumed;
-						this._end = wasm.inflate_end;
-						this.streamHandle = wasm.inflate_new();
-						if (type === "deflate-raw") {
-							result = wasm.inflate_init_raw(this.streamHandle);
-						} else if (type === "gzip") {
-							result = wasm.inflate_init_gzip(this.streamHandle);
-						} else {
-							result = wasm.inflate_init(this.streamHandle);
-						}
+						result = wasm.inflate_init(this.streamHandle);
 					}
 				}
-				if (result !== 0) {
-					throw new Error("init failed:" + result);
-				}
-			} catch (error) {
-				disposeStream(this);
-				throw error;
+			}
+			if (result !== 0) {
+				throw new Error("init failed:" + result);
 			}
 		},
 		transform(chunk, controller) {
@@ -82,13 +75,9 @@ function _make(isCompress, type, options = {}) {
 					if (!this.in || this.inBufferSize < toRead) {
 						if (this.in && free) {
 							free(this.in);
-							this.in = 0;
 						}
 						this.in = malloc(toRead);
 						this.inBufferSize = toRead;
-						if (!this.in) {
-							throw new Error("allocation failed");
-						}
 					}
 					heap.set(buffer.subarray(offset, offset + toRead), this.in);
 					const result = process(this.streamHandle, this.in, toRead, out, outBufferSize, 0);
@@ -111,7 +100,15 @@ function _make(isCompress, type, options = {}) {
 					offset += consumed;
 				}
 			} catch (error) {
-				disposeStream(this);
+				if (this._end && this.streamHandle) {
+					this._end(this.streamHandle);
+				}
+				if (this.in && free) {
+					free(this.in);
+				}
+				if (this.out && free) {
+					free(this.out);
+				}
 				controller.error(error);
 			}
 		},
@@ -142,35 +139,21 @@ function _make(isCompress, type, options = {}) {
 			} catch (error) {
 				controller.error(error);
 			} finally {
-				const result = disposeStream(this);
-				if (result !== 0) {
-					controller.error(new Error("end error:" + result));
+				if (this._end && this.streamHandle) {
+					const result = this._end(this.streamHandle);
+					if (result !== 0) {
+						controller.error(new Error("end error:" + result));
+					}
+				}
+				if (this.in && free) {
+					free(this.in);
+				}
+				if (this.out && free) {
+					free(this.out);
 				}
 			}
-		},
-		cancel() {
-			// release the stream handle and buffers when the pipeline is aborted,
-			// they would be leaked in the process-lifetime wasm heap otherwise
-			disposeStream(this);
 		}
 	});
-
-	function disposeStream(state) {
-		let endResult = 0;
-		if (state.streamHandle && state._end) {
-			endResult = state._end(state.streamHandle);
-		}
-		state.streamHandle = 0;
-		if (state.in && free) {
-			free(state.in);
-		}
-		state.in = 0;
-		if (state.out && free) {
-			free(state.out);
-		}
-		state.out = 0;
-		return endResult;
-	}
 }
 
 export class CompressionStreamZlib {
@@ -183,8 +166,3 @@ export class DecompressionStreamZlib {
 		return _make(false, type, options);
 	}
 }
-// These codecs are backed by the WASM module; they are unusable until setWasmExports() has run.
-// The worker uses this flag to know it must fall back to the native CompressionStream when the
-// module fails to load, rather than discarding a self-contained codec supplied through config.
-CompressionStreamZlib.requiresModule = true;
-DecompressionStreamZlib.requiresModule = true;
