@@ -690,7 +690,7 @@ int ZEXPORT inflate9(z_streamp strm, int flush) {
         state->mode = BAD;
         break;
       }
-      state->extra = (unsigned)(here.op) & 15;
+      state->extra = (unsigned)(here.op) & 31;
       state->mode = LENEXT;
       /* fallthrough */
     case LENEXT:
