@@ -2,7 +2,7 @@
  * payload_decompress_nowindow.c
  *
  * Similar to payload_decompress.c but does not allocate or provide an
- * external 64KiB window. This exercises inflate9's internal window
+ * external 64KiB window. This exercises inflate's internal window
  * allocation (updatewindow) and related code paths.
  */
 
@@ -25,9 +25,6 @@
 extern voidpf zcalloc(voidpf opaque, unsigned items, unsigned size);
 extern void zcfree(voidpf opaque, voidpf address);
 
-int ZEXPORT inflate9Init(z_streamp strm);
-int ZEXPORT inflate9(z_streamp strm, int flush);
-int ZEXPORT inflate9End(z_streamp strm);
 
 static unsigned char *inbuf = NULL;
 static size_t inbuf_sz = 0;
@@ -35,9 +32,9 @@ static size_t inbuf_sz = 0;
 static int cleanup_inflate(z_streamp strm, unsigned char *inb, int call_end,
                            int rc) {
   if (call_end && strm) {
-    int endret = inflate9End(strm);
+    int endret = inflateEnd(strm);
     if (endret != Z_OK)
-      fprintf(stderr, "inflate9End returned %d\n", endret);
+      fprintf(stderr, "inflateEnd returned %d\n", endret);
   }
   free(inb);
   return rc;
@@ -97,9 +94,9 @@ int main(int argc, char **argv) {
   strm.zfree = zcfree;
   strm.opaque = Z_NULL;
 
-  int init_ret = inflate9Init(&strm);
+  int init_ret = inflateInit2(&strm, -16);
   if (init_ret != Z_OK) {
-    fprintf(stderr, "inflate9Init failed: %d\n", init_ret);
+    fprintf(stderr, "inflateInit2(-16) failed: %d\n", init_ret);
     free(inbuf);
     return EXIT_INIT_FAIL;
   }
@@ -120,13 +117,13 @@ int main(int argc, char **argv) {
   unsigned char tmpout[65536];
   while (ret == Z_OK) {
     unsigned before = strm.avail_out;
-    /* set the out buffer for this call: allow inflate9 to allocate its own
+    /* set the out buffer for this call: allow inflate to allocate its own
      * window; but still supply an out buffer so we can collect produced bytes
      */
     strm.next_out = tmpout;
     strm.avail_out = sizeof(tmpout);
     int call_flush = (strm.avail_in == 0) ? Z_FINISH : Z_NO_FLUSH;
-    ret = inflate9(&strm, call_flush);
+    ret = inflate(&strm, call_flush);
     unsigned produced = (unsigned)(sizeof(tmpout) - strm.avail_out);
     if (produced) {
       size_t wrote = fwrite(tmpout, 1, produced, outf);
@@ -135,7 +132,7 @@ int main(int argc, char **argv) {
         return cleanup_inflate(&strm, inbuf, 1, EXIT_OUT_OPEN);
       }
     }
-    fprintf(stderr, "inflate9 nowindow loop ret=%d produced=%u\n", ret,
+    fprintf(stderr, "inflate nowindow loop ret=%d produced=%u\n", ret,
             produced);
     if (ret == Z_OK) {
       if (strm.avail_out == 0) {
@@ -148,13 +145,13 @@ int main(int argc, char **argv) {
 
   if (ret != Z_STREAM_END) {
     if (strm.msg)
-      fprintf(stderr, "inflate9 msg: %s\n", strm.msg);
+      fprintf(stderr, "inflate msg: %s\n", strm.msg);
     return cleanup_inflate(&strm, inbuf, 1, EXIT_FAIL_DECOMP);
   }
 
-  int endret = inflate9End(&strm);
+  int endret = inflateEnd(&strm);
   if (endret != Z_OK)
-    fprintf(stderr, "inflate9End returned %d\n", endret);
+    fprintf(stderr, "inflateEnd returned %d\n", endret);
   if (fclose(outf) != 0)
     perror("fclose out");
   return cleanup_inflate(

@@ -1,7 +1,7 @@
 /*
  * payload_decompress.c
  *
- * Robust harness using inflate9 (the custom inflate implementation). This
+ * Robust harness using inflate (the custom inflate implementation). This
  * mirrors the behavior and exit codes of payload_decompress_ref.c so both
  * tests behave identically from a harness perspective.
  */
@@ -32,10 +32,7 @@ extern int z_verbose;
 extern voidpf zcalloc(voidpf opaque, unsigned items, unsigned size);
 extern void zcfree(voidpf opaque, voidpf address);
 
-/* inflate9 API (from zlib/inflate9.c) */
-int ZEXPORT inflate9Init(z_streamp strm);
-int ZEXPORT inflate9(z_streamp strm, int flush);
-int ZEXPORT inflate9End(z_streamp strm);
+/* deflate64 decoding uses the merged inflate with inflateInit2(strm, -16) */
 
 /* in/out state */
 static unsigned char *inbuf = NULL;
@@ -46,9 +43,9 @@ static int cleanup_inflate(z_streamp strm, FILE *outf,
                            unsigned char *inbuf_local,
                            unsigned char *window_local, int call_end, int rc) {
   if (call_end && strm) {
-    int endret = inflate9End(strm);
+    int endret = inflateEnd(strm);
     if (endret != Z_OK)
-      fprintf(stderr, "inflate9End returned %d\n", endret);
+      fprintf(stderr, "inflateEnd returned %d\n", endret);
   }
   if (outf)
     fclose(outf);
@@ -124,9 +121,9 @@ int main(int argc, char **argv) {
   z_verbose = 2;
 #endif
 
-  int init_ret = inflate9Init(&strm);
+  int init_ret = inflateInit2(&strm, -16);
   if (init_ret != Z_OK) {
-    fprintf(stderr, "inflate9Init failed: %d\n", init_ret);
+    fprintf(stderr, "inflateInit2(-16) failed: %d\n", init_ret);
     free(inbuf);
     free(window);
     return EXIT_INIT_FAIL;
@@ -144,7 +141,7 @@ int main(int argc, char **argv) {
   strm.next_out = window;
   strm.avail_out = 65536;
 
-  /* Call inflate9 repeatedly until stream end or error. The inflate9
+  /* Call inflate repeatedly until stream end or error. The inflate
    * implementation may return Z_OK when the provided output buffer is
    * filled; treat that case by writing the produced block and continuing
    * the decomposition loop. This mirrors common streaming usage. */
@@ -152,11 +149,11 @@ int main(int argc, char **argv) {
   while (ret == Z_OK) {
     unsigned avail_before = strm.avail_out;
     /* Use Z_NO_FLUSH for intermediate calls and only use Z_FINISH when we
-     * have no more input to provide. This avoids inflate9 converting a
+     * have no more input to provide. This avoids inflate converting a
      * successful partial progress into Z_BUF_ERROR when called with
      * Z_FINISH repeatedly. */
     int call_flush = (strm.avail_in == 0) ? Z_FINISH : Z_NO_FLUSH;
-    ret = inflate9(&strm, call_flush);
+    ret = inflate(&strm, call_flush);
     /* produced bytes are the difference in avail_out */
     size_t produced = (size_t)avail_before - (size_t)strm.avail_out;
     if (produced > 0) {
@@ -166,7 +163,7 @@ int main(int argc, char **argv) {
         return cleanup_inflate(&strm, outf, inbuf, window, 1, EXIT_OUT_OPEN);
       }
     }
-    fprintf(stderr, "inflate9 loop ret=%d\n", ret);
+    fprintf(stderr, "inflate loop ret=%d\n", ret);
     if (ret == Z_OK) {
       /* If output buffer exhausted, reset next_out/avail_out to continue. */
       if (strm.avail_out == 0) {
@@ -184,17 +181,17 @@ int main(int argc, char **argv) {
       /* treat buffer errors like other decompression failures */
     }
     if (ret == EXIT_OUT_OPEN) {
-      fprintf(stderr, "inflate9 aborted: output write error\n");
+      fprintf(stderr, "inflate aborted: output write error\n");
       return cleanup_inflate(&strm, outf, inbuf, window, 1, EXIT_OUT_OPEN);
     }
     if (strm.msg)
-      fprintf(stderr, "inflate9 msg: %s\n", strm.msg);
+      fprintf(stderr, "inflate msg: %s\n", strm.msg);
     return cleanup_inflate(&strm, outf, inbuf, window, 1, EXIT_FAIL_DECOMP);
   }
 
-  int endret = inflate9End(&strm);
+  int endret = inflateEnd(&strm);
   if (endret != Z_OK)
-    fprintf(stderr, "inflate9End returned %d\n", endret);
+    fprintf(stderr, "inflateEnd returned %d\n", endret);
 
   if (fclose(outf) != 0)
     perror("fclose out");

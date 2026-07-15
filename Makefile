@@ -9,18 +9,18 @@ DEBUG_CFLAGS=-I./src/zlib -I./src -I./test -I./src/zlib/contrib/infback9 -O0 -g3
 ## Debug defines are disabled by default for a clean commit-ready Makefile.
 DEBUG_DEFINES=
 DEBUG_DEFINES_TRACED=
-SRC=src/inflate9.c src/zlib/contrib/infback9/inftree9.c src/zlib/zutil.c src/zlib/inflate.c src/zlib/inftrees.c
+SRC=src/inflate.c src/inffast.c src/inftrees.c src/zlib/zutil.c
 TESTSRC=zlib/crc32.c
 LIBS=-lz
 
 ## Build the payload decompressor test binary used for verification (deduplicated sources)
 PD_SRCS = test/payload_decompress.c \
-	src/inflate9.c src/zlib/inffast.c src/zlib/inftrees.c src/zlib/zutil.c src/zlib/inflate.c src/zlib/infback.c \
-	src/zlib/contrib/infback9/infback9.c src/zlib/contrib/infback9/inftree9.c src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c
+	src/inflate.c src/inffast.c src/inftrees.c src/zlib/zutil.c \
+	src/zlib/crc32.c src/zlib/adler32.c
 
 PD_NOWINDOW_SRCS = test/payload_decompress_nowindow.c \
-	src/inflate9.c src/zlib/inffast.c src/zlib/inftrees.c src/zlib/zutil.c src/zlib/inflate.c src/zlib/infback.c \
-	src/zlib/contrib/infback9/infback9.c src/zlib/contrib/infback9/inftree9.c src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c
+	src/inflate.c src/inffast.c src/inftrees.c src/zlib/zutil.c \
+	src/zlib/crc32.c src/zlib/adler32.c
 
 PD_NOWINDOW_DEBUG_OBJS = $(PD_NOWINDOW_SRCS:%.c=build/debug/%.o)
 
@@ -128,10 +128,10 @@ ci:
 # WASM build target (convenience target to produce dist/zlib-streams-dev.wasm)
 # -----------------------------------------------------------------------------
 EMCC ?= emsdk/upstream/emscripten/emcc
+WASM_OPT ?= emsdk/upstream/bin/wasm-opt
 
-WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/wasm/deflate_stream_wasm.c src/wasm/wasm_stream_common.c src/wasm/allocator.c src/inflate9.c \
-	src/zlib/contrib/infback9/inftree9.c \
-	src/zlib/inffast.c src/zlib/inflate.c src/zlib/inftrees.c src/zlib/zutil.c \
+WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/wasm/deflate_stream_wasm.c src/wasm/wasm_stream_common.c src/wasm/allocator.c \
+	src/inflate.c src/inffast.c src/inftrees.c src/zlib/zutil.c \
 	src/zlib/crc32.c src/zlib/adler32.c src/zlib/trees.c src/zlib/deflate.c
 # CRC-32: -DZ_SOLO suppresses zlib's Z_U4/Z_U8 word types, which makes crc32.c's braid
 # path (#elif defined(Z_U4)) fall back to a byte-at-a-time loop. Restore the types and
@@ -301,7 +301,7 @@ dist/zlib-streams.wasm: $(WASM_SRCS)
 		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_gzip","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
 		-o $@
 	cp src/wasm/api/zlib-streams.js dist/zlib-streams.js
-	@which wasm-opt >/dev/null 2>&1 && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; wasm-opt -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
+	@test -x $(WASM_OPT) && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; $(WASM_OPT) -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
 
 # -----------------------------------------------------------------------------
 # Optional generator: build a C++ tool that creates Deflate64 ZIPs using the
