@@ -132,13 +132,18 @@ WASM_OPT ?= emsdk/upstream/bin/wasm-opt
 
 WASM_SRCS = src/wasm/inflate9_stream_wasm.c src/wasm/inflate_stream_wasm.c src/wasm/deflate_stream_wasm.c src/wasm/wasm_stream_common.c src/wasm/allocator.c \
 	src/inflate.c src/inffast.c src/inftrees.c src/zlib/zutil.c \
-	src/zlib/crc32.c src/zlib/adler32.c src/trees.c src/zlib/deflate.c
+	src/zlib/crc32.c src/zlib/adler32.c src/trees.c src/deflate.c src/deflate_crc32.c
 # CRC-32: -DZ_SOLO suppresses zlib's Z_U4/Z_U8 word types, which makes crc32.c's braid
 # path (#elif defined(Z_U4)) fall back to a byte-at-a-time loop. Restore the types and
 # force the 8-byte braid (Z_TESTW=8) so the slicing/braided CRC compiles for wasm:
 # ~12x faster CRC (342 -> ~4100 MB/s), bit-identical output. wasm32 has native i64.
 WASM_CRC_CFLAGS = -DZ_U4=unsigned -DZ_U8='unsigned long long' -DZ_TESTW=8
-WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto -DDYNAMIC_CRC_TABLE -DBUILDFIXED -DZ_SOLO $(WASM_CRC_CFLAGS)
+# DEFLATE_COMPARE256_64LE extends matches 8 bytes at a time in longest_match, which is
+# the same match length computed faster: ~7% at every level, byte-identical output.
+# USE_ZLIB_RABIN_KARP_ROLLING_HASH turns Chromium's own hash OFF so the deflate stream
+# stays bit-for-bit what madler's deflate.c produces.
+WASM_DEFLATE_CFLAGS = -DDEFLATE_COMPARE256_64LE -DUSE_ZLIB_RABIN_KARP_ROLLING_HASH
+WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto -DDYNAMIC_CRC_TABLE -DBUILDFIXED -DZ_SOLO $(WASM_CRC_CFLAGS) $(WASM_DEFLATE_CFLAGS)
 
 .PHONY: wasm
 wasm: dist/zlib-streams-dev.wasm
