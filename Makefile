@@ -289,6 +289,9 @@ run_all_tests: dist/zlib-streams-dev.wasm
 	@node src/wasm/tests/run_roundtrip_cli.js deflate 24000 dist/zlib-streams-dev.wasm
 	@$(MAKE) run_transform_roundtrip
 	@$(MAKE) test_decompressionstream_inflate9
+	# Output buffer filling before any input is consumed, including a deflate64
+	# match longer than the buffer, which no encoder we have can produce
+	@node src/wasm/tests/test_output_buffer_boundary.js dist/zlib-streams-dev.wasm
 	@echo "Completed run_all_tests"
 
 dist/zlib-streams-dev.wasm: $(WASM_SRCS)
