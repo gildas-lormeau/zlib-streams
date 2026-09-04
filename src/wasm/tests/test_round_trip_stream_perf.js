@@ -17,7 +17,8 @@ if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process
   globalThis.WASM_EXPORTS = exp;
 
   const mod = await import('../api/zlib-streams.js');
-  const { CompressionStreamZlib, DecompressionStreamZlib } = mod;
+  const { CompressionStreamZlib, DecompressionStreamZlib, setWasmExports } = mod;
+  setWasmExports(exp);
 
   // Parse optional CLI flags:
   // --packets=65536,32768 (bytes)
@@ -56,6 +57,7 @@ if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process
         // reuse the top-level wasm exports for all runs to avoid repeated instantiate overhead
         const expRun = exp;
         globalThis.WASM_EXPORTS = expRun;
+        setWasmExports(expRun);
 
         // per-run stream options (zero-copy by default, allow forcing Buffer output)
         const streamOpts = (() => {
