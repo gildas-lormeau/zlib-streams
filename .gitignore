@@ -1,3 +1,4 @@
 tmp/
 src/7zip
 build/
+test/payload_decompress_*
