@@ -56,6 +56,37 @@ function decode(result) {
         console.log('OK deflate_process reports Z_MEM_ERROR');
     }
 
+    // the compress direction used to skip the status check entirely, so the same failure reached the
+    // transform loop as "zero produced, zero consumed" and ended the entry without an error
+    const { instance: api } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: () => { } } });
+    const mod = await import('../api/zlib-streams.js');
+    mod.setWasmExports(api.exports);
+    const stream = new mod.CompressionStreamZlib('deflate-raw');
+    for (const size of [65536, 1024, 16]) {
+        while (api.exports.malloc(size)) {
+            // eat the heap after the stream allocated its own buffers
+        }
+    }
+    const read = (async () => {
+        const reader = stream.readable.getReader();
+        while (!(await reader.read()).done) {
+            // the codec reports the failure by erroring the stream, which surfaces here
+        }
+    })();
+    try {
+        const writer = stream.writable.getWriter();
+        writer.write(new Uint8Array(200000)).catch(() => { });
+        writer.close().catch(() => { });
+        await read;
+        failures.push('compressing on an exhausted heap reported no error');
+    } catch (error) {
+        if (error.message.includes('process error:')) {
+            console.log(`OK compressing on an exhausted heap fails with "${error.message}"`);
+        } else {
+            failures.push(`compressing on an exhausted heap: unexpected error ${error.message}`);
+        }
+    }
+
     if (failures.length) {
         failures.forEach(failure => console.error('FAIL', failure));
         process.exit(1);
