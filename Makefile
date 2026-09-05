@@ -292,6 +292,8 @@ run_all_tests: dist/zlib-streams-dev.wasm
 	# Output buffer filling before any input is consumed, including a deflate64
 	# match longer than the buffer, which no encoder we have can produce
 	@node src/wasm/tests/test_output_buffer_boundary.js dist/zlib-streams-dev.wasm
+	# Error codes packed the same way as a success, on both directions
+	@node src/wasm/tests/test_process_error_encoding.js dist/zlib-streams-dev.wasm
 	@echo "Completed run_all_tests"
 
 dist/zlib-streams-dev.wasm: $(WASM_SRCS)

@@ -34,17 +34,22 @@ unsigned wasm_stream_last_consumed(unsigned zptr) {
   return c->last_consumed;
 }
 
+/* the process functions pack the produced byte count and the zlib status code into one int, so
+   every return path has to use this shape: a bare negative code decodes as a huge byte count */
+#define WASM_STREAM_RESULT(produced, code)                                     \
+  (((produced) & 0x00ffffff) | (((code) & 0xff) << 24))
+
 int wasm_stream_process_common(unsigned zptr, unsigned in_ptr, unsigned in_len,
                                unsigned out_ptr, unsigned out_len, int flush,
                                int (*process_func)(z_streamp, int)) {
   struct wasm_stream_ctx *c = (struct wasm_stream_ctx *)(uintptr_t)zptr;
   if (!c)
-    return Z_STREAM_ERROR;
+    return WASM_STREAM_RESULT(0, Z_STREAM_ERROR);
 
   if (in_len > c->inbuf_sz) {
     unsigned char *nb = (unsigned char *)realloc(c->inbuf, in_len);
     if (!nb)
-      return Z_MEM_ERROR;
+      return WASM_STREAM_RESULT(0, Z_MEM_ERROR);
     c->inbuf = nb;
     c->inbuf_sz = in_len;
   }
@@ -58,6 +63,5 @@ int wasm_stream_process_common(unsigned zptr, unsigned in_ptr, unsigned in_len,
   int ret = process_func(&c->strm, flush);
   int produced = (int)(out_len - c->strm.avail_out);
   c->last_consumed = (unsigned)(in_len - c->strm.avail_in);
-  int code = ret & 0xff;
-  return (produced & 0x00ffffff) | ((code & 0xff) << 24);
+  return WASM_STREAM_RESULT(produced, ret);
 }
