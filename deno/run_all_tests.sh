@@ -14,7 +14,7 @@ failures=0
 echo "\n== Running Deno-native tests (deno/*.mjs) =="
 for f in deno/*.mjs; do
   echo "\n-- $f --"
-  if ! $DENO run $DENOFLAGS -- $f $WASM; then
+  if ! $DENO run $DENOFLAGS $f $WASM; then
     echo "FAILED: $f"
     failures=$((failures+1))
   fi
@@ -62,7 +62,7 @@ for f in src/wasm/tests/*.js; do
       extra_args=("$WASM") ;;
   esac
 
-  if $DENO run $DENOFLAGS -- $f "${extra_args[@]}"; then
+  if $DENO run $DENOFLAGS $f "${extra_args[@]}"; then
     echo "OK (deno): $f"
     continue
   fi
