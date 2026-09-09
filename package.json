@@ -15,7 +15,8 @@
   "exports": {
     "./package.json": "./package.json",
     "./zlib-streams.js": "./dist/zlib-streams.js",
-    "./zlib-streams.wasm": "./dist/zlib-streams.wasm"
+    "./zlib-streams.wasm": "./dist/zlib-streams.wasm",
+    "./zip-module.wasm": "./dist/zip-module.wasm"
   },
   "repository": {
     "type": "git",
