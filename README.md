@@ -31,5 +31,12 @@ make wasm_prod
 ```
 Output: `dist/zlib-streams.wasm` and `dist/zlib-streams.js`
 
+- zip.js module: the codecs plus the AES-CTR/HMAC-SHA1 engine behind the encrypted entries of zip.js
+```sh
+make zip_module
+make test_zip_module
+```
+Output: `dist/zip-module.wasm`
+
 ## License
 See LICENSE for details.

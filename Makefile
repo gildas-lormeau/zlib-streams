@@ -148,6 +148,7 @@ WASM_CRC_CFLAGS = -DZ_U4=unsigned -DZ_U8='unsigned long long' -DZ_TESTW=8
 # USE_ZLIB_RABIN_KARP_ROLLING_HASH turns Chromium's own hash OFF so the deflate stream
 # stays bit-for-bit what madler's deflate.c produces.
 WASM_DEFLATE_CFLAGS = -DDEFLATE_COMPARE256_64LE -DUSE_ZLIB_RABIN_KARP_ROLLING_HASH
+WASM_EXPORTED_FUNCTIONS = "_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_gzip","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"
 WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto -DDYNAMIC_CRC_TABLE -DBUILDFIXED -DZ_SOLO $(WASM_CRC_CFLAGS) $(WASM_DEFLATE_CFLAGS) $(INFLATE_CHUNK_CFLAGS)
 
 .PHONY: wasm
@@ -160,7 +161,7 @@ dist/zlib-streams_traced.wasm: $(WASM_SRCS)
 	@echo "Building traced $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) $(DEBUG_DEFINES_TRACED) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
-	-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_gzip","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
+	-s EXPORTED_FUNCTIONS='[$(WASM_EXPORTED_FUNCTIONS)]' \
 		-o $@
 
 	# Run reference C and WASM test suites over payloads in test/ref-data
@@ -300,7 +301,7 @@ dist/zlib-streams-dev.wasm: $(WASM_SRCS)
 	@echo "Building $@ using $(EMCC)"
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
-		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_gzip","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
+		-s EXPORTED_FUNCTIONS='[$(WASM_EXPORTED_FUNCTIONS)]' \
 		-o $@
 	cp src/wasm/api/zlib-streams.js dist/zlib-streams.js
 
@@ -313,10 +314,34 @@ dist/zlib-streams.wasm: $(WASM_SRCS)
 	@mkdir -p dist
 	$(EMCC) $(WASM_SRCS) $(WASM_CFLAGS) -Oz -flto -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
 		-s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=1 \
-		-s EXPORTED_FUNCTIONS='["_inflate9_new","_inflate9_init","_inflate9_init_raw","_inflate9_process","_inflate9_end","_inflate9_last_consumed","_inflate_new","_inflate_init","_inflate_init_raw","_inflate_init_gzip","_inflate_process","_inflate_end","_inflate_last_consumed","_deflate_new","_deflate_init","_deflate_init_raw","_deflate_init_gzip","_deflate_process","_deflate_end","_deflate_last_consumed","_malloc","_free"]' \
+		-s EXPORTED_FUNCTIONS='[$(WASM_EXPORTED_FUNCTIONS)]' \
 		-o $@
 	cp src/wasm/api/zlib-streams.js dist/zlib-streams.js
 	@test -x $(WASM_OPT) && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; $(WASM_OPT) -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
+
+# -----------------------------------------------------------------------------
+# zip.js module: the zlib codecs plus the AES-CTR/HMAC-SHA1 engine behind its
+# encrypted entries (src/wasm/aes_hmac_wasm.c), vendored by zip.js as
+# lib/core/streams/zlib-wasm/zlib-streams.wasm
+# -----------------------------------------------------------------------------
+ZIP_MODULE_SRCS = src/wasm/aes_hmac_wasm.c
+ZIP_MODULE_EXPORTED_FUNCTIONS = $(WASM_EXPORTED_FUNCTIONS),"_aes_hmac_new","_aes_hmac_init","_aes_hmac_process","_aes_hmac_end"
+
+.PHONY: zip_module
+zip_module: dist/zip-module.wasm
+
+dist/zip-module.wasm: $(WASM_SRCS) $(ZIP_MODULE_SRCS)
+	@echo "Building zip.js module $@ using $(EMCC)"
+	@mkdir -p dist
+	$(EMCC) $(WASM_SRCS) $(ZIP_MODULE_SRCS) $(WASM_CFLAGS) -Oz -flto -s WASM=1 -s STANDALONE_WASM=1 --no-entry \
+		-s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=1 \
+		-s EXPORTED_FUNCTIONS='[$(ZIP_MODULE_EXPORTED_FUNCTIONS)]' \
+		-o $@
+	@test -x $(WASM_OPT) && { echo "Running wasm-opt -Oz --enable-bulk-memory-opt"; $(WASM_OPT) -Oz --enable-bulk-memory-opt -o $@ $@ || true; } || true
+
+.PHONY: test_zip_module
+test_zip_module: dist/zip-module.wasm
+	@node src/wasm/tests/test_aes_hmac.js dist/zip-module.wasm
 
 # -----------------------------------------------------------------------------
 # Optional generator: build a C++ tool that creates Deflate64 ZIPs using the
