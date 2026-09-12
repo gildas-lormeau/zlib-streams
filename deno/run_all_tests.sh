@@ -58,6 +58,9 @@ for f in src/wasm/tests/*.js; do
       extra_args=("$WASM" tmp/all_runs/roundtrip_input3.bin) ;;
     test_round_trip_stream.js)
       extra_args=("$WASM" tmp/all_runs/roundtrip_input3.bin tmp/all_runs/roundtrip_out__sample.bin) ;;
+    test_aes_hmac.js)
+      # the AES engine is only linked into the zip.js module, next to $WASM in dist/
+      extra_args=("$(dirname "$WASM")/zip-module.wasm") ;;
     *)
       extra_args=("$WASM") ;;
   esac
