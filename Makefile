@@ -152,7 +152,8 @@ WASM_EXPORTED_FUNCTIONS = "_inflate9_new","_inflate9_init","_inflate9_init_raw",
 WASM_CFLAGS = -Isrc -Isrc/zlib -Isrc/zlib/contrib/infback9 -O2 -flto -DDYNAMIC_CRC_TABLE -DBUILDFIXED -DZ_SOLO $(WASM_CRC_CFLAGS) $(WASM_DEFLATE_CFLAGS) $(INFLATE_CHUNK_CFLAGS)
 
 .PHONY: wasm
-wasm: dist/zlib-streams-dev.wasm
+wasm:
+	@$(MAKE) -B dist/zlib-streams-dev.wasm
 
 .PHONY: wasm_traced
 wasm_traced: dist/zlib-streams_traced.wasm
@@ -307,7 +308,8 @@ dist/zlib-streams-dev.wasm: $(WASM_SRCS)
 
 # Production-optimized wasm: smaller build with -Oz and no extra runtime methods.
 .PHONY: wasm_prod
-wasm_prod: dist/zlib-streams.wasm
+wasm_prod:
+	@$(MAKE) -B dist/zlib-streams.wasm
 
 dist/zlib-streams.wasm: $(WASM_SRCS)
 	@echo "Building production wasm $@ using $(EMCC)"
@@ -328,7 +330,8 @@ ZIP_MODULE_SRCS = src/wasm/aes_hmac_wasm.c
 ZIP_MODULE_EXPORTED_FUNCTIONS = $(WASM_EXPORTED_FUNCTIONS),"_aes_hmac_new","_aes_hmac_init","_aes_hmac_process","_aes_hmac_end"
 
 .PHONY: zip_module
-zip_module: dist/zip-module.wasm
+zip_module:
+	@$(MAKE) -B dist/zip-module.wasm
 
 dist/zip-module.wasm: $(WASM_SRCS) $(ZIP_MODULE_SRCS)
 	@echo "Building zip.js module $@ using $(EMCC)"

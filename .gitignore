@@ -1,5 +1,6 @@
 tmp/
 src/7zip
 build/
+emsdk/
 test/payload_decompress_*
 !test/payload_decompress_*.c
