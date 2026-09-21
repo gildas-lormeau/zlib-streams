@@ -80,10 +80,29 @@ await (async () => {
         await read;
         failures.push('compressing on an exhausted heap reported no error');
     } catch (error) {
-        if (error.message.includes('process error:')) {
-            console.log(`OK compressing on an exhausted heap fails with "${error.message}"`);
+        if (error.message.includes('process error:') && error.code === 'Z_MEM_ERROR') {
+            console.log(`OK compressing on an exhausted heap fails with "${error.message}" and the code ${error.code}`);
         } else {
-            failures.push(`compressing on an exhausted heap: unexpected error ${error.message}`);
+            failures.push(`compressing on an exhausted heap: unexpected error ${error.message} with the code ${error.code}`);
+        }
+    }
+
+    // a stream that cannot allocate its buffers on an exhausted heap carries the same code, so a
+    // caller can tell a memory failure from a data failure without reading the message; the failed
+    // stream above gave its buffers back, so the heap is eaten again first
+    for (const size of [65536, 1024, 16]) {
+        while (api.exports.malloc(size)) {
+            // eat what the failed stream released
+        }
+    }
+    try {
+        new mod.DecompressionStreamZlib('deflate-raw');
+        failures.push('constructing a stream on an exhausted heap reported no error');
+    } catch (error) {
+        if (error.message === 'allocation failed' && error.code === 'Z_MEM_ERROR') {
+            console.log(`OK constructing a stream on an exhausted heap fails with "${error.message}" and the code ${error.code}`);
+        } else {
+            failures.push(`constructing a stream on an exhausted heap: unexpected error ${error.message} with the code ${error.code}`);
         }
     }
 
