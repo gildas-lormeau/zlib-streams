@@ -300,6 +300,7 @@ run_all_tests: dist/zlib-streams-dev.wasm
 	@node src/wasm/tests/test_stream_abort_releases_memory.js dist/zlib-streams-dev.wasm
 	# Bytes after the end of the stream rejected, as the platform inflaters do
 	@node src/wasm/tests/test_trailing_data.js dist/zlib-streams-dev.wasm
+	@node src/wasm/tests/test_unknown_format.js dist/zlib-streams-dev.wasm
 	@echo "Completed run_all_tests"
 
 dist/zlib-streams-dev.wasm: $(WASM_SRCS)
