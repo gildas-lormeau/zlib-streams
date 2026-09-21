@@ -14,7 +14,7 @@ function decode(result) {
     return { produced: result & 0x00ffffff, code: (code & 0x80) ? code - 256 : code };
 }
 
-(async () => {
+await (async () => {
     const wasmPath = process.argv[2] || join('dist', 'zlib-streams-dev.wasm');
     if (!existsSync(wasmPath)) {
         console.error('wasm not found:', wasmPath);

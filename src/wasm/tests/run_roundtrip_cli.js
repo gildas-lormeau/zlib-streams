@@ -18,7 +18,7 @@ if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); usage()
 if (!['deflate','gzip','deflate-raw','deflate64-raw'].includes(format)) { console.error('unknown format:', format); usage(); }
 if (!Number.isFinite(size) || size <= 0) { console.error('invalid size:', size); usage(); }
 
-(async ()=>{
+await (async ()=>{
   const startAll = Date.now();
   const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });

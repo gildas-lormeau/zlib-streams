@@ -21,7 +21,7 @@ const RANDOM_LENGTH = 512 * 1024;
 const TIMEOUT = 120000;
 const DEFLATE64_PATH = join('test', 'ref-data', '100k_lines.deflate64');
 
-(async () => {
+await (async () => {
     const wasmPath = process.argv[2] || join('dist', 'zlib-streams-dev.wasm');
     if (!existsSync(wasmPath)) {
         console.error('wasm not found:', wasmPath);

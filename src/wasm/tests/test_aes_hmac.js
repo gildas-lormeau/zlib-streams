@@ -38,7 +38,7 @@ function same(first, second) {
     return first.length == second.length && first.every((value, index) => value == second[index]);
 }
 
-(async () => {
+await (async () => {
     const wasmPath = process.argv[2] || 'dist/zip-module.wasm';
     if (!existsSync(wasmPath)) {
         console.error('wasm not found:', wasmPath);

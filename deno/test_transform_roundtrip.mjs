@@ -7,7 +7,7 @@ if (Deno.args.length < 1) {
 const wasmPath = Deno.args[0] || path.join('dist', 'zlib-streams-dev.wasm');
 if (!fs.existsSync(wasmPath)) { console.error('wasm not found at', wasmPath); Deno.exit(2); }
 
-(async function () {
+await (async function () {
   const wasmBuf = fs.readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: () => { } } });
   const exp = instance.exports;

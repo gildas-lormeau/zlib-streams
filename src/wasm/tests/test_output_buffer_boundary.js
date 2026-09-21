@@ -110,7 +110,7 @@ async function compress(CompressionStreamZlib, format, source) {
     return Buffer.concat(chunks);
 }
 
-(async function () {
+await (async function () {
     const wasmPath = process.argv[2] || join('dist', 'zlib-streams-dev.wasm');
     if (!existsSync(wasmPath)) {
         console.error('wasm not found at', wasmPath);

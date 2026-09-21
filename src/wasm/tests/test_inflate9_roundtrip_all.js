@@ -16,7 +16,7 @@ if (files.length === 0) {
     process.exit(2);
 }
 
-(async () => {
+await (async () => {
     for (const f of files) {
         const inPath = join(refDir, f);
         const outPath = join(outDir, 'inflate9__' + f + '.out');

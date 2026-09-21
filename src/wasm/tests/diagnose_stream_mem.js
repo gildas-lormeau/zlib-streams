@@ -14,7 +14,7 @@ for (const a of process.argv.slice(2)) {
 }
 if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
-(async ()=>{
+await (async ()=>{
   const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;

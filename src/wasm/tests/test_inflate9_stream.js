@@ -11,7 +11,7 @@ const outPath = process.argv[4];
 const buf = fs.readFileSync(inPath);
 const wasmBuf = fs.readFileSync(wasmPath);
 
-(async () => {
+await (async () => {
   const { instance } = await WebAssembly.instantiate(wasmBuf, {
     env: {
       emscripten_notify_memory_growth: () => {}

@@ -10,7 +10,7 @@ if (process.argv.length < 2) {
 const wasmPath = process.argv[2] || join('dist','zlib-streams-dev.wasm');
 if (!existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); process.exit(2); }
 
-(async ()=>{
+await (async ()=>{
   const wasmBuf = readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;

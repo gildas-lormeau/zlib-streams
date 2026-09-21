@@ -15,7 +15,7 @@ function packRet(ret) {
   return { produced: ret & 0x00ffffff, code: (ret >> 24) & 0xff };
 }
 
-(async () => {
+await (async () => {
   const { instance } = await WebAssembly.instantiate(wasmBuf, {
     env: { emscripten_notify_memory_growth: () => {} }
   });

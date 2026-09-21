@@ -17,7 +17,7 @@ if (files.length === 0) {
   process.exit(2);
 }
 
-(async ()=>{
+await (async ()=>{
   const wasmBuf = fs.readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;

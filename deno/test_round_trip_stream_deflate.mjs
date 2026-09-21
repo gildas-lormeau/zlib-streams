@@ -7,7 +7,7 @@ if (Deno.args.length < 1) {
 const wasmPath = Deno.args[0];
 if (!fs.existsSync(wasmPath)) { console.error('wasm not found:', wasmPath); Deno.exit(2); }
 
-(async () => {
+await (async () => {
   const wasmBuf = fs.readFileSync(wasmPath);
   const { instance } = await WebAssembly.instantiate(wasmBuf, { env: { emscripten_notify_memory_growth: ()=>{} } });
   const exp = instance.exports;
