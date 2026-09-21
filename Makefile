@@ -296,6 +296,8 @@ run_all_tests: dist/zlib-streams-dev.wasm
 	@node src/wasm/tests/test_output_buffer_boundary.js dist/zlib-streams-dev.wasm
 	# Error codes packed the same way as a success, on both directions
 	@node src/wasm/tests/test_process_error_encoding.js dist/zlib-streams-dev.wasm
+	# Buffers and zlib state released whichever end ends the stream, with no transformer hook
+	@node src/wasm/tests/test_stream_abort_releases_memory.js dist/zlib-streams-dev.wasm
 	@echo "Completed run_all_tests"
 
 dist/zlib-streams-dev.wasm: $(WASM_SRCS)
